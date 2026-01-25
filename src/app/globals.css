@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --color-background: #000000;
+  --color-primary: #FF3B47;
+}
+
+body {
+  background-color: var(--color-background);
+  color: white;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* --- AURORA BACKGROUND EFFECT --- */
+.aurora-bg {
+  background-color: #000000;
+  background-image:
+    repeating-linear-gradient(100deg, #60a5fa 0%, #e879f9 50%, #5eead4 100%),
+    repeating-linear-gradient(100deg, #60a5fa 0%, #e879f9 50%, #5eead4 100%);
+  background-size: 200% 200%;
+  background-position: 0 0;
+  background-blend-mode: overlay;
+  filter: blur(100px);
+  opacity: 0.3;
+  /* Mengatur intensitas warna aurora */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150%;
+  height: 150%;
+  z-index: -1;
+  animation: aurora 40s linear infinite alternate;
+}
+
+@keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+
+  50% {
+    background-position: 100% 50%;
+    transform: translate(-50%, -50%) rotate(10deg);
+  }
+
+  100% {
+    background-position: 0% 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+}
+
+/* --- MOBILE MENU ANIMATION --- */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.2s ease-out;
+}
+
+/* --- FIX Z-INDEX MODAL WALLETCONNECT (SAPU JAGAT) --- */
+/* Agar QR Code muncul paling depan di atas dashboard */
+
+/* Target untuk Web3Modal / WalletConnect Versi Baru (w3m) */
+w3m-modal {
+  position: relative;
+  z-index: 2147483647 !important;
+  /* Level Tertinggi */
+}
+
+/* Target untuk Web3Modal Versi Lama (wcm) */
+wcm-modal {
+  position: relative;
+  z-index: 2147483647 !important;
+}
+
+/* Target untuk Overlay/Background Gelap */
+.w3m-overlay,
+.wcm-overlay {
+  z-index: 2147483646 !important;
+}
+
+/* Target Reset CSS Variable Web3Modal agar tidak ketutup parent */
+:root {
+  --w3m-z-index: 2147483647 !important;
+  --wcm-z-index: 2147483647 !important;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
