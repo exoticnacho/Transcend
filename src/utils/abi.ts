@@ -617,6 +617,59 @@ export const ENTERPRISE_ABI = [
         type: "address",
       },
     ],
+    name: "getDeposit",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "company",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+    ],
+    name: "getCompanyBalance",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "depositAmount",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "yieldAmount",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "company",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+    ],
     name: "getYield",
     outputs: [
       {

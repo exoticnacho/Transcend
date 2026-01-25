@@ -572,6 +572,20 @@ function EnterpriseDashboard() {
     args: address ? [address, DAI_ADDRESS] : undefined,
   });
 
+  const { data: treasuryBalanceUSDT, refetch: refetchBalanceUSDT } = useReadContract({
+    abi: ENTERPRISE_ABI,
+    address: ENTERPRISE_ADDRESS,
+    functionName: "getDeposit",
+    args: address ? [address, USDT_ADDRESS] : undefined,
+  });
+
+  const { data: treasuryBalanceDAI, refetch: refetchBalanceDAI } = useReadContract({
+    abi: ENTERPRISE_ABI,
+    address: ENTERPRISE_ADDRESS,
+    functionName: "getDeposit",
+    args: address ? [address, DAI_ADDRESS] : undefined,
+  });
+
   const displayYield =
     treasuryViewToken === USDT_ADDRESS ? yieldUSDT : yieldDAI;
 
@@ -783,8 +797,17 @@ function EnterpriseDashboard() {
       refetchAllowance();
       refetchYieldUSDT();
       refetchYieldDAI();
+      refetchBalanceUSDT();
+      refetchBalanceDAI();
     }
-  }, [isDepConfirming, isWithConfirming, isPayConfirming, treasuryViewToken]);
+  }, [
+    isDepConfirming,
+    isWithConfirming,
+    isPayConfirming,
+    treasuryViewToken,
+    refetchBalanceUSDT,
+    refetchBalanceDAI,
+  ]);
 
   return (
     <>
