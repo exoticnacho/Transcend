@@ -1,10 +1,9 @@
 // src/app/dashboard/page.tsx
 "use client";
 
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
-import AddressBookPicker from "@/components/AddressBookPicker";
-import { useScheduler } from "@/hooks/useScheduler";
 import {
   CONTRACT_ADDRESS,
   DAI_ADDRESS,
@@ -16,6 +15,20 @@ import { config } from "@/utils/config";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+
+const NoSSRWagmiWrapper = dynamic(
+  () => Promise.resolve(({ children }: { children: React.ReactNode }) => {
+    const [queryClient] = useState(() => new QueryClient());
+    return (
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      </WagmiProvider>
+    );
+  }),
+  { ssr: false }
+);
 import {
   FaArrowUpRightFromSquare,
   FaCaretDown,
@@ -27,9 +40,7 @@ import {
   FaRocket,
   FaTrash,
   FaUsers,
-  FaWallet,
-  FaUser,
-  FaClock,
+  FaWallet, // Import icon wallet
 } from "react-icons/fa6";
 import { isAddress, maxUint256, parseEther } from "viem";
 import {
@@ -41,49 +52,46 @@ import {
   WagmiProvider,
 } from "wagmi";
 
-const queryClient = new QueryClient();
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export default function App() {
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <main className="flex flex-col min-h-screen bg-[#050505] text-white font-sans relative overflow-x-hidden">
-          <Navbar />
+    <NoSSRWagmiWrapper>
+      <main className="flex flex-col min-h-screen bg-[#050505] text-white font-sans relative overflow-x-hidden">
+        <Navbar />
 
-          <div className="fixed top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-red-600/20 rounded-full blur-[120px] pointer-events-none z-0" />
-          {/* Fixed: bg-gradient-to-t -> bg-linear-to-t */}
-          <div className="fixed bottom-0 left-0 right-0 h-[300px] bg-linear-to-t from-red-900/5 to-transparent pointer-events-none z-0" />
+        <div className="fixed top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-red-600/20 rounded-full blur-[120px] pointer-events-none z-0" />
+        {/* Fixed: bg-gradient-to-t -> bg-linear-to-t */}
+        <div className="fixed bottom-0 left-0 right-0 h-[300px] bg-linear-to-t from-red-900/5 to-transparent pointer-events-none z-0" />
 
-          {/* Fixed: flex-grow -> grow */}
-          <div className="grow flex flex-col items-center justify-center w-full px-4 sm:px-6 pt-32 pb-20 relative z-10">
-            <div className="w-full max-w-3xl">
-              <div className="text-center mb-10 animate-fade-in-up">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold uppercase tracking-widest mb-4">
-                  <FaUsers /> Public Protocol
-                </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg">
-                  Transcend {/* Fixed: bg-gradient-to-r -> bg-linear-to-r */}
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-red-500 to-orange-500">
-                    Community
-                  </span>
-                </h1>
-                <p className="text-gray-400 text-base md:text-lg max-w-md mx-auto leading-relaxed">
-                  Distribute Mixed Assets (LSK, USDT, DAI) in a single
-                  transaction.
-                </p>
+        {/* Fixed: flex-grow -> grow */}
+        <div className="grow flex flex-col items-center justify-center w-full px-4 sm:px-6 pt-32 pb-20 relative z-10">
+          <div className="w-full max-w-3xl">
+            <div className="text-center mb-10 animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold uppercase tracking-widest mb-4">
+                <FaUsers /> Public Protocol
               </div>
-
-              <DashboardForm />
+              <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg">
+                Transcend {/* Fixed: bg-gradient-to-r -> bg-linear-to-r */}
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-red-500 to-orange-500">
+                  Community
+                </span>
+              </h1>
+              <p className="text-gray-400 text-base md:text-lg max-w-md mx-auto leading-relaxed">
+                Distribute Mixed Assets (LSK, USDT, DAI) in a single
+                transaction.
+              </p>
             </div>
-          </div>
 
-          <div className="relative z-10 mt-auto border-t border-white/5 bg-[#050505]">
-            <Footer />
+            <DashboardForm />
           </div>
-        </main>
-      </QueryClientProvider>
-    </WagmiProvider>
+        </div>
+
+        <div className="relative z-10 mt-auto border-t border-white/5 bg-[#050505]">
+          <Footer />
+        </div>
+      </main>
+    </NoSSRWagmiWrapper>
   );
 }
 
@@ -124,31 +132,9 @@ function DashboardForm() {
   const [csvPreview, setCsvPreview] = useState("");
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showAddressPicker, setShowAddressPicker] = useState(false);
-  const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
-  const { addSchedule } = useScheduler();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  // Load draft from scheduler
-  useEffect(() => {
-    const draft = sessionStorage.getItem("transcend_draft_payroll");
-    if (draft) {
-      try {
-        const draftData = JSON.parse(draft);
-        const newRows = draftData.map((r: any) => ({
-          address: r.address,
-          amount: r.amount,
-          tokenType: r.token as "NATIVE" | "USDT" | "DAI",
-        }));
-        setRows(newRows);
-        sessionStorage.removeItem("transcend_draft_payroll");
-      } catch (e) {
-        console.error("Failed to load draft", e);
-      }
-    }
   }, []);
 
   // --- FUNGSI CONNECT BARU UNTUK DASHBOARD ---
@@ -352,49 +338,6 @@ function DashboardForm() {
     }
   };
 
-  const handlePickFromAddressBook = (index: number) => {
-    setPickingForIndex(index);
-    setShowAddressPicker(true);
-  };
-
-  const handleAddressSelected = (address: string, label: string) => {
-    if (pickingForIndex !== null) {
-      handleInputChange(pickingForIndex, "address", address);
-    }
-  };
-
-  const handleSchedulePayroll = () => {
-    if (rows.length === 0 || !rows.some((r) => r.address && r.amount)) {
-      alert("Please add at least one recipient with amount");
-      return;
-    }
-
-    const scheduleName = prompt("Enter a name for this scheduled payroll:");
-    if (!scheduleName) return;
-
-    const scheduleDate = prompt(
-      "Enter date for execution (YYYY-MM-DD):",
-      new Date(Date.now() + 86400000).toISOString().split("T")[0]
-    );
-    if (!scheduleDate) return;
-
-    const nextRunAt = new Date(scheduleDate + "T09:00:00").toISOString();
-
-    addSchedule({
-      name: scheduleName,
-      frequency: "one-time",
-      nextRunAt,
-      recipients: rows.map((r) => ({
-        address: r.address,
-        amount: r.amount,
-        token: r.tokenType,
-      })),
-      enabled: true,
-    });
-
-    alert(`Payroll "${scheduleName}" scheduled for ${scheduleDate}!`);
-  };
-
   const needsApproveUSDT =
     allowanceUSDT !== undefined && allowanceUSDT < totalUsdtNeeded;
   const needsApproveDAI =
@@ -445,7 +388,7 @@ function DashboardForm() {
                   key={index}
                   className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-[#151515] p-2 sm:p-3 rounded-2xl border border-white/5 hover:border-red-500/30 hover:bg-[#1a1a1a] transition-all group/row shadow-sm"
                 >
-                  <div className="w-full sm:w-auto grow flex items-center gap-2">
+                  <div className="w-full sm:w-auto grow">
                     <input
                       type="text"
                       placeholder="0x... Address"
@@ -455,13 +398,6 @@ function DashboardForm() {
                       }
                       className="w-full bg-transparent border-none text-white focus:ring-0 placeholder-gray-600 font-mono text-sm px-3 py-2"
                     />
-                    <button
-                      onClick={() => handlePickFromAddressBook(index)}
-                      className="p-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-all shrink-0"
-                      title="Pick from Address Book"
-                    >
-                      <FaUser size={14} />
-                    </button>
                   </div>
                   {/* Fixed: w-[1px] -> w-px */}
                   <div className="h-8 w-px bg-white/10 hidden sm:block"></div>
@@ -568,121 +504,6 @@ function DashboardForm() {
         )}
       </div>
 
-      {/* PLATFORM FEE PREVIEW */}
-      {rows.length > 0 && rows.some((r) => r.amount && parseFloat(r.amount) > 0) && (
-        <div className="mb-6 bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-              <FaCircleInfo className="text-yellow-500" />
-            </div>
-            <h3 className="text-lg font-bold text-white">Platform Fee Breakdown</h3>
-          </div>
-
-          <p className="text-sm text-gray-400 mb-4">
-            2% platform fee applies to all transfers. Fee is deducted from the amount you specify.
-          </p>
-
-          <div className="space-y-3">
-            {/* Native (LSK) */}
-            {(() => {
-              const nativeRows = rows.filter((r) => r.tokenType === "NATIVE" && r.amount);
-              const totalNative = nativeRows.reduce((acc, r) => acc + parseFloat(r.amount || "0"), 0);
-              const feeNative = totalNative * 0.02;
-              const netNative = totalNative - feeNative;
-
-              if (totalNative > 0) {
-                return (
-                  <div className="bg-black/40 border border-white/10 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase mb-2">LSK (Native)</p>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-400">Total</p>
-                        <p className="font-bold text-white">{totalNative.toFixed(4)} LSK</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Fee (2%)</p>
-                        <p className="font-bold text-yellow-500">-{feeNative.toFixed(4)} LSK</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Net Received</p>
-                        <p className="font-bold text-green-400">{netNative.toFixed(4)} LSK</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-            })()}
-
-            {/* USDT */}
-            {(() => {
-              const usdtRows = rows.filter((r) => r.tokenType === "USDT" && r.amount);
-              const totalUsdt = usdtRows.reduce((acc, r) => acc + parseFloat(r.amount || "0"), 0);
-              const feeUsdt = totalUsdt * 0.02;
-              const netUsdt = totalUsdt - feeUsdt;
-
-              if (totalUsdt > 0) {
-                return (
-                  <div className="bg-black/40 border border-white/10 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase mb-2">USDT</p>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-400">Total</p>
-                        <p className="font-bold text-white">{totalUsdt.toFixed(2)} USDT</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Fee (2%)</p>
-                        <p className="font-bold text-yellow-500">-{feeUsdt.toFixed(2)} USDT</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Net Received</p>
-                        <p className="font-bold text-green-400">{netUsdt.toFixed(2)} USDT</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-            })()}
-
-            {/* DAI */}
-            {(() => {
-              const daiRows = rows.filter((r) => r.tokenType === "DAI" && r.amount);
-              const totalDai = daiRows.reduce((acc, r) => acc + parseFloat(r.amount || "0"), 0);
-              const feeDai = totalDai * 0.02;
-              const netDai = totalDai - feeDai;
-
-              if (totalDai > 0) {
-                return (
-                  <div className="bg-black/40 border border-white/10 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase mb-2">DAI</p>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-400">Total</p>
-                        <p className="font-bold text-white">{totalDai.toFixed(2)} DAI</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Fee (2%)</p>
-                        <p className="font-bold text-yellow-500">-{feeDai.toFixed(2)} DAI</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400">Net Received</p>
-                        <p className="font-bold text-green-400">{netDai.toFixed(2)} DAI</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-            })()}
-          </div>
-
-          <div className="mt-4 bg-yellow-900/10 border border-yellow-500/20 rounded-lg p-3">
-            <p className="text-xs text-yellow-400 flex items-center gap-2">
-              <FaCircleInfo />
-              Recipients will receive the <strong>Net Amount</strong> after the 2% platform fee is deducted.
-            </p>
-          </div>
-        </div>
-      )}
-
       {(isConfirmed || writeError || isReverted) && (
         <div className="mb-6 animate-fade-in">
           {isConfirmed && (
@@ -762,10 +583,10 @@ function DashboardForm() {
         <button
           onClick={handleMultiPay}
           disabled={!canSubmit}
-          className="w-full bg-linear-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-base sm:text-lg py-3 sm:py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] flex items-center justify-center gap-3 group"
+          className="w-full bg-linear-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-lg py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] flex items-center justify-center gap-3 group"
         >
           {isPending || isConfirming ? (
-            "Processing..." // Shortened for mobile
+            "Processing Transaction..."
           ) : (
             <>
               <FaRocket className="group-hover:rotate-12 transition-transform" />{" "}
@@ -773,27 +594,6 @@ function DashboardForm() {
             </>
           )}
         </button>
-      )}
-
-      {/* Schedule for Later Button */}
-      {isConnected && (
-        <button
-          onClick={handleSchedulePayroll}
-          className="w-full mt-3 bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-500/50 text-gray-300 hover:text-orange-400 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-        >
-          <FaClock /> Schedule for Later
-        </button>
-      )}
-
-      {/* Address Book Picker Modal */}
-      {showAddressPicker && (
-        <AddressBookPicker
-          onSelect={handleAddressSelected}
-          onClose={() => {
-            setShowAddressPicker(false);
-            setPickingForIndex(null);
-          }}
-        />
       )}
     </div>
   );

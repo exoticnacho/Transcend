@@ -1,14 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
 import {
     AddressBookEntry,
     useAddressBook,
 } from "@/hooks/useAddressBook";
-import { config } from "@/utils/config";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { WagmiProvider } from "wagmi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { config } from "@/utils/config";
 import {
     FaAddressBook,
     FaPlus,
@@ -19,34 +21,43 @@ import {
     FaUser,
 } from "react-icons/fa";
 import { isAddress } from "viem";
-import { WagmiProvider } from "wagmi";
 
-const queryClient = new QueryClient();
+const NoSSRWagmiWrapper = dynamic(
+    () => Promise.resolve(({ children }: { children: React.ReactNode }) => {
+        const [queryClient] = useState(() => new QueryClient());
+        return (
+            <WagmiProvider config={config}>
+                <QueryClientProvider client={queryClient}>
+                    {children}
+                </QueryClientProvider>
+            </WagmiProvider>
+        );
+    }),
+    { ssr: false }
+);
 
 export default function AddressBookPage() {
     return (
-        <WagmiProvider config={config}>
-            <QueryClientProvider client={queryClient}>
-                <main className="flex flex-col min-h-screen bg-[#020202] text-white font-sans relative overflow-x-hidden">
-                    <Navbar />
+        <NoSSRWagmiWrapper>
+            <main className="flex flex-col min-h-screen bg-[#020202] text-white font-sans relative overflow-x-hidden">
+                <Navbar />
 
-                    {/* Background */}
-                    <div className="fixed top-0 left-0 w-full h-[800px] bg-gradient-to-b from-purple-900/20 via-indigo-900/10 to-transparent pointer-events-none z-0" />
-                    <div className="fixed -top-40 -left-40 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+                {/* Background */}
+                <div className="fixed top-0 left-0 w-full h-[800px] bg-gradient-to-b from-purple-900/20 via-indigo-900/10 to-transparent pointer-events-none z-0" />
+                <div className="fixed -top-40 -left-40 w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-                    <div className="grow w-full px-4 sm:px-8 pt-32 pb-20 relative z-10 flex flex-col items-center">
-                        <div className="w-full max-w-6xl">
-                            <HeaderSection />
-                            <AddressBookContent />
-                        </div>
+                <div className="grow w-full px-4 sm:px-8 pt-32 pb-20 relative z-10 flex flex-col items-center">
+                    <div className="w-full max-w-6xl">
+                        <HeaderSection />
+                        <AddressBookContent />
                     </div>
+                </div>
 
-                    <div className="relative z-10 mt-auto border-t border-purple-900/20 bg-[#020202]">
-                        <Footer />
-                    </div>
-                </main>
-            </QueryClientProvider>
-        </WagmiProvider>
+                <div className="relative z-10 mt-auto border-t border-purple-900/20 bg-[#020202]">
+                    <Footer />
+                </div>
+            </main>
+        </NoSSRWagmiWrapper>
     );
 }
 

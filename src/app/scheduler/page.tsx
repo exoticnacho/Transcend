@@ -1,10 +1,11 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
+import dynamicImport from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
 import { PayrollSchedule, useScheduler } from "@/hooks/useScheduler";
-import { config } from "@/utils/config";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     FaClock,
     FaCalendarAlt,
@@ -16,34 +17,47 @@ import {
     FaExclamationCircle,
 } from "react-icons/fa";
 import { formatDistance } from "date-fns";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
+import { config } from "@/utils/config";
+import { useState } from "react";
 
-const queryClient = new QueryClient();
+const NoSSRWagmiWrapper = dynamicImport(
+    () => Promise.resolve(({ children }: { children: React.ReactNode }) => {
+        const [queryClient] = useState(() => new QueryClient());
+        return (
+            <WagmiProvider config={config}>
+                <QueryClientProvider client={queryClient}>
+                    {children}
+                </QueryClientProvider>
+            </WagmiProvider>
+        );
+    }),
+    { ssr: false }
+);
 
 export default function SchedulerPage() {
     return (
-        <WagmiProvider config={config}>
-            <QueryClientProvider client={queryClient}>
-                <main className="flex flex-col min-h-screen bg-[#020202] text-white font-sans relative overflow-x-hidden">
-                    <Navbar />
+        <NoSSRWagmiWrapper>
+            <main className="flex flex-col min-h-screen bg-[#020202] text-white font-sans relative overflow-x-hidden">
+                <Navbar />
 
-                    {/* Background */}
-                    <div className="fixed top-0 left-0 w-full h-[800px] bg-gradient-to-b from-orange-900/20 via-red-900/10 to-transparent pointer-events-none z-0" />
-                    <div className="fixed -top-40 -right-40 w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none" />
+                {/* Background */}
+                <div className="fixed top-0 left-0 w-full h-[800px] bg-gradient-to-b from-orange-900/20 via-red-900/10 to-transparent pointer-events-none z-0" />
+                <div className="fixed -top-40 -right-40 w-[600px] h-[600px] bg-orange-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-                    <div className="grow w-full px-4 sm:px-8 pt-32 pb-20 relative z-10 flex flex-col items-center">
-                        <div className="w-full max-w-6xl">
-                            <HeaderSection />
-                            <SchedulerContent />
-                        </div>
+                <div className="grow w-full px-4 sm:px-8 pt-32 pb-20 relative z-10 flex flex-col items-center">
+                    <div className="w-full max-w-6xl">
+                        <HeaderSection />
+                        <SchedulerContent />
                     </div>
+                </div>
 
-                    <div className="relative z-10 mt-auto border-t border-orange-900/20 bg-[#020202]">
-                        <Footer />
-                    </div>
-                </main>
-            </QueryClientProvider>
-        </WagmiProvider>
+                <div className="relative z-10 mt-auto border-t border-orange-900/20 bg-[#020202]">
+                    <Footer />
+                </div>
+            </main>
+        </NoSSRWagmiWrapper>
     );
 }
 

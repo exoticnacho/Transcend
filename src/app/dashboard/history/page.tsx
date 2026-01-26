@@ -1,6 +1,6 @@
-// src/app/dashboard/history/page.tsx
 "use client";
 
+import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
 import {
@@ -13,6 +13,20 @@ import { config } from "@/utils/config";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+const NoSSRWagmiWrapper = dynamic(
+  () => Promise.resolve(({ children }: { children: React.ReactNode }) => {
+    const [queryClient] = useState(() => new QueryClient());
+    return (
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      </WagmiProvider>
+    );
+  }),
+  { ssr: false }
+);
 import {
   FaArrowUpRightFromSquare,
   FaBriefcase,
@@ -25,28 +39,25 @@ import {
 import { formatEther, parseAbiItem } from "viem";
 import { useAccount, usePublicClient, WagmiProvider } from "wagmi";
 
-const queryClient = new QueryClient();
 const BLOCK_CHUNK_SIZE = 40000n;
 const MAX_HISTORY_BLOCKS = 500000n;
 
 export default function HistoryPage() {
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <main className="flex flex-col min-h-screen bg-[#080808] text-white font-sans relative overflow-x-hidden">
-          <Navbar />
-          <div className="flex-grow flex flex-col px-6 sm:px-12 pt-36 pb-20 relative z-10 w-full max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
-              <FaClockRotateLeft className="text-red-500" /> Transaction History
-            </h1>
-            <HistoryList />
-          </div>
-          <div className="relative z-10 mt-auto border-t border-white/5 bg-[#050505]">
-            <Footer />
-          </div>
-        </main>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <NoSSRWagmiWrapper>
+      <main className="flex flex-col min-h-screen bg-[#080808] text-white font-sans relative overflow-x-hidden">
+        <Navbar />
+        <div className="flex-grow flex flex-col px-6 sm:px-12 pt-36 pb-20 relative z-10 w-full max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
+            <FaClockRotateLeft className="text-red-500" /> Transaction History
+          </h1>
+          <HistoryList />
+        </div>
+        <div className="relative z-10 mt-auto border-t border-white/5 bg-[#050505]">
+          <Footer />
+        </div>
+      </main>
+    </NoSSRWagmiWrapper>
   );
 }
 
