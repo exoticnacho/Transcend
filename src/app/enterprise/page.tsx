@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 import dynamicImport from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
-import AddressBookPicker from "@/components/AddressBookPicker";
+import AddressBookModal from "@/components/AddressBookModal";
+import { AddressBookEntry } from "@/hooks/useAddressBook";
+import ScheduleModal from "@/components/ScheduleModal";
 import { useScheduler } from "@/hooks/useScheduler";
 import {
   DAI_ADDRESS,
@@ -33,6 +35,7 @@ import {
   FaVault,
   FaUser,
   FaClock,
+  FaAddressBook,
 } from "react-icons/fa6";
 import { formatEther, isAddress, maxUint256, parseEther } from "viem";
 import {
@@ -553,9 +556,9 @@ function EnterpriseDashboard() {
   ]);
   const [csvPreview, setCsvPreview] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [showAddressPicker, setShowAddressPicker] = useState(false);
-  const [pickingForIndex, setPickingForIndex] = useState<number | null>(null);
+  const [showAddressBookModal, setShowAddressBookModal] = useState(false);
   const { addSchedule } = useScheduler();
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const {
     writeContract: writePayroll,
@@ -738,14 +741,47 @@ function EnterpriseDashboard() {
     setRows(n);
   };
 
-  const handlePickFromAddressBook = (index: number) => {
-    setPickingForIndex(index);
-    setShowAddressPicker(true);
-  };
+  const handleImportFromAddressBook = (selected: AddressBookEntry[]) => {
+    const newRows: RowData[] = [];
 
-  const handleAddressSelected = (address: string, label: string) => {
-    if (pickingForIndex !== null) {
-      handleInputChange(pickingForIndex, "address", address);
+    selected.forEach((entry) => {
+      const tokenStr = (entry.defaultToken || "").toUpperCase();
+      let added = false; // Flag check
+
+      // Check for USDT
+      if (tokenStr.includes("USDT")) {
+        newRows.push({
+          address: entry.address,
+          amount: "",
+          token: USDT_ADDRESS,
+        });
+        added = true;
+      }
+
+      // Check for DAI
+      if (tokenStr.includes("DAI")) {
+        newRows.push({
+          address: entry.address,
+          amount: "",
+          token: DAI_ADDRESS,
+        });
+        added = true;
+      }
+
+      // Fallback: If no recognized token found, default to USDT (Enterprise Standard)
+      if (!added) {
+        newRows.push({
+          address: entry.address,
+          amount: "",
+          token: USDT_ADDRESS,
+        });
+      }
+    });
+
+    if (rows.length === 1 && !rows[0].address && !rows[0].amount) {
+      setRows(newRows);
+    } else {
+      setRows(prev => [...prev, ...newRows]);
     }
   };
 
@@ -754,22 +790,22 @@ function EnterpriseDashboard() {
       alert("Please add at least one recipient with amount");
       return;
     }
+    setShowScheduleModal(true);
+  };
 
-    const scheduleName = prompt("Enter a name for this scheduled payroll:");
-    if (!scheduleName) return;
-
-    const scheduleDate = prompt(
-      "Enter date for execution (YYYY-MM-DD):",
-      new Date(Date.now() + 86400000).toISOString().split("T")[0]
-    );
-    if (!scheduleDate) return;
-
-    const nextRunAt = new Date(scheduleDate + "T09:00:00").toISOString();
-
+  const handleScheduleConfirm = (scheduleData: {
+    name: string;
+    frequency: "monthly" | "weekly" | "one-time";
+    nextRunAt: string;
+    dayOfMonth?: number;
+    dayOfWeek?: number;
+  }) => {
     addSchedule({
-      name: scheduleName + " (Enterprise)",
-      frequency: "one-time",
-      nextRunAt,
+      name: scheduleData.name + " (Enterprise)",
+      frequency: scheduleData.frequency,
+      nextRunAt: scheduleData.nextRunAt,
+      dayOfMonth: scheduleData.dayOfMonth,
+      dayOfWeek: scheduleData.dayOfWeek,
       recipients: rows.map((r) => ({
         address: r.address,
         amount: r.amount,
@@ -778,7 +814,8 @@ function EnterpriseDashboard() {
       enabled: true,
     });
 
-    alert(`Payroll "${scheduleName}" scheduled for ${scheduleDate}!`);
+    setShowScheduleModal(false);
+    alert(`Payroll "${scheduleData.name}" scheduled successfully!`);
   };
 
   const totalPayrollUSDT = rows
@@ -997,7 +1034,7 @@ function EnterpriseDashboard() {
                       <div className="w-8 h-8 rounded-full bg-yellow-900/20 text-yellow-600 flex items-center justify-center font-mono text-xs border border-yellow-900/30 shrink-0">
                         {index + 1}
                       </div>
-                      <div className="grow w-full sm:w-auto flex gap-2">
+                      <div className="grow w-full sm:w-auto">
                         <input
                           type="text"
                           placeholder="Recipient Wallet (0x...)"
@@ -1005,15 +1042,8 @@ function EnterpriseDashboard() {
                           onChange={(e) =>
                             handleInputChange(index, "address", e.target.value)
                           }
-                          className="grow bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-yellow-500 outline-none font-mono"
+                          className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-yellow-500 outline-none font-mono"
                         />
-                        <button
-                          onClick={() => handlePickFromAddressBook(index)}
-                          className="p-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-xl transition-all shrink-0"
-                          title="Pick from Address Book"
-                        >
-                          <FaUser size={14} />
-                        </button>
                       </div>
                       <div className="flex gap-2 w-full sm:w-auto">
                         <div className="relative w-[140px]">
@@ -1054,12 +1084,22 @@ function EnterpriseDashboard() {
                       </div>
                     </div>
                   ))}
-                  <button
-                    onClick={addRow}
-                    className="w-full py-3 border border-dashed border-white/10 rounded-xl text-gray-500 hover:text-yellow-500 hover:border-yellow-500/30 transition-all flex items-center justify-center gap-2 mt-4 text-sm font-medium"
-                  >
-                    <FaPlus /> Add Recipient
-                  </button>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() => setShowAddressBookModal(true)}
+                      className="w-full py-3 border border-white/10 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium"
+                    >
+                      <FaAddressBook /> Import from Address Book
+                    </button>
+
+                    <button
+                      onClick={addRow}
+                      className="w-full py-3 border border-dashed border-white/10 rounded-xl text-gray-500 hover:text-yellow-500 hover:border-yellow-500/30 transition-all flex items-center justify-center gap-2 text-sm font-medium"
+                    >
+                      <FaPlus /> Add Recipient
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center p-8">
@@ -1192,14 +1232,22 @@ function EnterpriseDashboard() {
                 <FaClock /> Schedule for Later
               </button>
 
-              {/* Address Book Picker Modal */}
-              {showAddressPicker && (
-                <AddressBookPicker
-                  onSelect={handleAddressSelected}
-                  onClose={() => {
-                    setShowAddressPicker(false);
-                    setPickingForIndex(null);
-                  }}
+
+              {/* Address Book Modal */}
+              {showAddressBookModal && (
+                <AddressBookModal
+                  onClose={() => setShowAddressBookModal(false)}
+                  onImport={handleImportFromAddressBook}
+                />
+              )}
+
+              {/* Schedule Modal */}
+              {showScheduleModal && (
+                <ScheduleModal
+                  onSchedule={handleScheduleConfirm}
+                  onClose={() => setShowScheduleModal(false)}
+                  recipientCount={rows.length}
+                  theme="yellow"
                 />
               )}
             </div>

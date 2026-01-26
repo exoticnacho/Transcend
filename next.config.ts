@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+// Force restart
 const nextConfig: NextConfig = {
   // Fix indexedDB error during SSR - externalize wallet libraries
   serverExternalPackages: ['wagmi', 'viem', '@walletconnect/ethereum-provider'],
