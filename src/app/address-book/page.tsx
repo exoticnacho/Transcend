@@ -1,6 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
 import {
@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa";
 import { isAddress } from "viem";
 
-const NoSSRWagmiWrapper = dynamic(
+const NoSSRWagmiWrapper = dynamicImport(
     () => Promise.resolve(({ children }: { children: React.ReactNode }) => {
         const [queryClient] = useState(() => new QueryClient());
         return (

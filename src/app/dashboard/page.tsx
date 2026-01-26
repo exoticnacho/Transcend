@@ -41,7 +41,9 @@ import {
   FaTrash,
   FaUsers,
   FaWallet, // Import icon wallet
+  FaClock,
 } from "react-icons/fa6";
+import { useScheduler } from "@/hooks/useScheduler";
 import { isAddress, maxUint256, parseEther } from "viem";
 import {
   useAccount,
@@ -132,9 +134,27 @@ function DashboardForm() {
   const [csvPreview, setCsvPreview] = useState("");
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addSchedule } = useScheduler();
 
   useEffect(() => {
     setMounted(true);
+
+    // Load draft from scheduler
+    const draft = sessionStorage.getItem("transcend_draft_payroll");
+    if (draft) {
+      try {
+        const draftData = JSON.parse(draft);
+        const newRows = draftData.map((r: any) => ({
+          address: r.address,
+          amount: r.amount,
+          tokenType: r.token === "LSK" ? "NATIVE" : r.token,
+        }));
+        setRows(newRows);
+        sessionStorage.removeItem("transcend_draft_payroll");
+      } catch (e) {
+        console.error("Failed to load draft", e);
+      }
+    }
   }, []);
 
   // --- FUNGSI CONNECT BARU UNTUK DASHBOARD ---
@@ -336,6 +356,38 @@ function DashboardForm() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleSchedulePayroll = () => {
+    if (rows.length === 0 || !rows.some((r) => r.address && r.amount)) {
+      alert("Please add at least one recipient with amount");
+      return;
+    }
+
+    const scheduleName = prompt("Enter a name for this scheduled payment:");
+    if (!scheduleName) return;
+
+    const scheduleDate = prompt(
+      "Enter date for execution (YYYY-MM-DD):",
+      new Date(Date.now() + 86400000).toISOString().split("T")[0]
+    );
+    if (!scheduleDate) return;
+
+    const nextRunAt = new Date(scheduleDate + "T09:00:00").toISOString();
+
+    addSchedule({
+      name: scheduleName,
+      frequency: "one-time",
+      nextRunAt,
+      recipients: rows.map((r) => ({
+        address: r.address,
+        amount: r.amount,
+        token: r.tokenType === "NATIVE" ? "LSK" : r.tokenType,
+      })),
+      enabled: true,
+    });
+
+    alert(`Payment "${scheduleName}" scheduled for ${scheduleDate}!`);
   };
 
   const needsApproveUSDT =
@@ -579,21 +631,30 @@ function DashboardForm() {
             } Transfers)`}
         </button>
       ) : (
-        // Fixed: bg-gradient-to-r -> bg-linear-to-r
-        <button
-          onClick={handleMultiPay}
-          disabled={!canSubmit}
-          className="w-full bg-linear-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-lg py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] flex items-center justify-center gap-3 group"
-        >
-          {isPending || isConfirming ? (
-            "Processing Transaction..."
-          ) : (
-            <>
-              <FaRocket className="group-hover:rotate-12 transition-transform" />{" "}
-              Transfer {rows.length} Asset{rows.length > 1 ? "s" : ""}
-            </>
-          )}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSchedulePayroll}
+            className="flex-1 bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 hover:border-white/30 text-white font-bold text-lg py-5 rounded-2xl transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 group"
+          >
+            <FaClock className="text-gray-400 group-hover:text-white transition-colors" />
+            <span className="text-gray-300 group-hover:text-white">Schedule</span>
+          </button>
+
+          <button
+            onClick={handleMultiPay}
+            disabled={!canSubmit}
+            className="flex-[3] bg-linear-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-lg py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] flex items-center justify-center gap-3 group"
+          >
+            {isPending || isConfirming ? (
+              "Processing Transaction..."
+            ) : (
+              <>
+                <FaRocket className="group-hover:rotate-12 transition-transform" />{" "}
+                Transfer {rows.length} Asset{rows.length > 1 ? "s" : ""}
+              </>
+            )}
+          </button>
+        </div>
       )}
     </div>
   );
