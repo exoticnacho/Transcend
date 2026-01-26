@@ -3,12 +3,11 @@
 
 export const dynamic = "force-dynamic";
 
-import dynamicImport from "next/dynamic";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/landing/Footer";
 import AddressBookModal from "@/components/AddressBookModal";
-import { AddressBookEntry } from "@/hooks/useAddressBook";
+import Navbar from "@/components/Navbar";
 import ScheduleModal from "@/components/ScheduleModal";
+import Footer from "@/components/landing/Footer";
+import { AddressBookEntry } from "@/hooks/useAddressBook";
 import { useScheduler } from "@/hooks/useScheduler";
 import {
   DAI_ADDRESS,
@@ -19,11 +18,14 @@ import {
 } from "@/utils/abi";
 import { config } from "@/utils/config";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import dynamicImport from "next/dynamic";
 import { useEffect, useRef, useState } from "react"; // FIX: Tambahkan useRef
 import {
+  FaAddressBook,
   FaBriefcase,
   FaCheck,
   FaCircleExclamation,
+  FaClock,
   FaFileCsv,
   FaGears,
   FaLandmark,
@@ -33,9 +35,6 @@ import {
   FaTrash,
   FaUserTie,
   FaVault,
-  FaUser,
-  FaClock,
-  FaAddressBook,
 } from "react-icons/fa6";
 import { formatEther, isAddress, maxUint256, parseEther } from "viem";
 import {
@@ -43,23 +42,22 @@ import {
   useReadContract,
   useWaitForTransactionReceipt,
   useWriteContract,
-
   WagmiProvider,
 } from "wagmi";
 
-
 const NoSSRWagmiWrapper = dynamicImport(
-  () => Promise.resolve(({ children }: { children: React.ReactNode }) => {
-    const [queryClient] = useState(() => new QueryClient());
-    return (
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-      </WagmiProvider>
-    );
-  }),
-  { ssr: false }
+  () =>
+    Promise.resolve(({ children }: { children: React.ReactNode }) => {
+      const [queryClient] = useState(() => new QueryClient());
+      return (
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </WagmiProvider>
+      );
+    }),
+  { ssr: false },
 );
 
 export default function EnterprisePage() {
@@ -132,7 +130,6 @@ interface RowData {
   token: `0x${string}`;
 }
 
-// Treasury Analytics Component
 function TreasuryAnalytics({
   usdtBalance,
   daiBalance,
@@ -144,93 +141,137 @@ function TreasuryAnalytics({
   usdtYield: bigint | undefined;
   daiYield: bigint | undefined;
 }) {
-  // Generate mock historical data for visualization
-  const generateChartData = () => {
-    const currentUSDT = usdtBalance ? parseFloat(formatEther(usdtBalance)) : 0;
-    const currentDAI = daiBalance ? parseFloat(formatEther(daiBalance)) : 0;
-    const yieldUSDT = usdtYield ? parseFloat(formatEther(usdtYield)) : 0;
-    const yieldDAI = daiYield ? parseFloat(formatEther(daiYield)) : 0;
+  // 1. Hitung Realtime Value
+  const valUSDT = usdtBalance ? parseFloat(formatEther(usdtBalance)) : 0;
+  const valDAI = daiBalance ? parseFloat(formatEther(daiBalance)) : 0;
+  const yieldValUSDT = usdtYield ? parseFloat(formatEther(usdtYield)) : 0;
+  const yieldValDAI = daiYield ? parseFloat(formatEther(daiYield)) : 0;
 
-    // Simulate 7 days of growth
+  const totalUSDT = valUSDT + yieldValUSDT;
+  const totalDAI = valDAI + yieldValDAI;
+
+  // Total Gabungan untuk Kotak "Awal"
+  const grandTotal = totalUSDT + totalDAI;
+
+  // 2. Generate Dummy Historical Data
+  const generateChartData = () => {
     const data = [];
     for (let i = 6; i >= 0; i--) {
       const dayAgo = new Date();
       dayAgo.setDate(dayAgo.getDate() - i);
-      const label = dayAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-      // Simulate gradual growth
+      const label = dayAgo.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
       const growthFactor = (6 - i) / 6;
+
       data.push({
         date: label,
-        USDT: Math.max(0, currentUSDT - yieldUSDT * (1 - growthFactor)),
-        DAI: Math.max(0, currentDAI - yieldDAI * (1 - growthFactor)),
+        USDT: Math.max(0, valUSDT - yieldValUSDT * 0.5 * (1 - growthFactor)),
+        DAI: Math.max(0, valDAI - yieldValDAI * 0.5 * (1 - growthFactor)),
       });
     }
+    // Update hari terakhir dengan data real
+    data[6].USDT = totalUSDT;
+    data[6].DAI = totalDAI;
     return data;
   };
 
   const chartData = generateChartData();
-  const totalValue = chartData[chartData.length - 1]?.USDT + chartData[chartData.length - 1]?.DAI || 0;
+  const maxValue =
+    Math.max(...chartData.map((d) => Math.max(d.USDT, d.DAI))) || 1;
 
   return (
     <div className="bg-[#0A0A0A] border border-yellow-600/30 rounded-3xl p-6 sm:p-8 mb-8 shadow-2xl relative overflow-hidden">
       <div className="absolute inset-0 bg-linear-to-br from-yellow-500/5 to-transparent pointer-events-none"></div>
 
       <div className="relative z-10">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        {/* --- HEADER: JUDUL KIRI, KOTAK TOTAL KANAN (STYLE ORIGINAL) --- */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
           <div>
             <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3 mb-2">
               <FaGears className="text-yellow-500" />
               Treasury Analytics
             </h3>
-            <p className="text-sm text-gray-400">7-day balance growth visualization</p>
+            <p className="text-sm text-gray-400">
+              Yield performance & asset distribution.
+            </p>
           </div>
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl px-4 py-2">
-            <p className="text-xs text-yellow-600 font-bold uppercase">Total Value</p>
-            <p className="text-2xl font-bold text-yellow-400">${totalValue.toFixed(2)}</p>
+
+          {/* Kotak Besar Total Assets */}
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl px-5 py-3 text-right min-w-[160px]">
+            <p className="text-[10px] text-yellow-600 font-bold uppercase tracking-widest mb-1">
+              Total Assets
+            </p>
+            <p className="text-3xl font-bold text-yellow-400 font-mono">
+              $
+              {grandTotal.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </p>
           </div>
         </div>
 
-        {/* Simple Bar Chart Visualization */}
-        <div className="grid grid-cols-7 gap-2 h-48 items-end">
+        {/* Legend / Label Header */}
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-4 mb-4 text-[10px] font-bold uppercase tracking-widest text-gray-500 px-2">
+          <div className="text-right text-green-500 flex items-center justify-end gap-2">
+            USDT Pool <div className="w-2 h-2 rounded-full bg-green-500"></div>
+          </div>
+          <div className="text-center w-[60px]">Date</div>
+          <div className="text-left text-blue-500 flex items-center justify-start gap-2">
+            <div className="w-2 h-2 rounded-full bg-blue-500"></div> DAI Pool
+          </div>
+        </div>
+
+        {/* --- DIVERGING CHART (MIRROR STYLE) --- */}
+        <div className="flex flex-col gap-3">
           {chartData.map((day, i) => {
-            const maxValue = Math.max(...chartData.map(d => d.USDT + d.DAI));
-            const heightPercent = ((day.USDT + day.DAI) / maxValue) * 100;
+            const widthUSDT = (day.USDT / maxValue) * 100;
+            const widthDAI = (day.DAI / maxValue) * 100;
 
             return (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div className="w-full flex flex-col gap-1 items-end justify-end h-40">
-                  {day.USDT > 0 && (
-                    <div
-                      className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t-lg transition-all duration-300 hover:opacity-80"
-                      style={{ height: `${(day.USDT / maxValue) * 100}%` }}
-                      title={`USDT: ${day.USDT.toFixed(2)}`}
-                    ></div>
-                  )}
-                  {day.DAI > 0 && (
-                    <div
-                      className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all duration-300 hover:opacity-80"
-                      style={{ height: `${(day.DAI / maxValue) * 100}%` }}
-                      title={`DAI: ${day.DAI.toFixed(2)}`}
-                    ></div>
-                  )}
+              <div
+                key={i}
+                className="grid grid-cols-[1fr_60px_1fr] gap-4 items-center group hover:bg-white/5 p-1 rounded-lg transition-colors"
+              >
+                {/* 1. SISI KIRI (USDT) -> Pakai flex-row-reverse agar bar tumbuh dari kanan ke kiri */}
+                <div className="flex flex-row-reverse items-center w-full h-6 relative">
+                  {/* Bar Hijau */}
+                  <div
+                    style={{ width: `${widthUSDT}%` }}
+                    className="h-full bg-gradient-to-l from-green-500 to-green-900 rounded-l-sm shadow-[0_0_10px_rgba(34,197,94,0.3)] transition-all duration-500"
+                  ></div>
+
+                  {/* Label Angka (Muncul saat hover, di ujung kiri bar) */}
+                  <span className="mr-3 text-[10px] text-green-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    ${day.USDT.toFixed(2)}
+                  </span>
                 </div>
-                <p className="text-[10px] text-gray-500 font-bold">{day.date}</p>
+
+                {/* 2. TENGAH (TANGGAL) */}
+                <div className="flex justify-center items-center h-6">
+                  <span className="text-[10px] text-gray-500 font-mono font-bold uppercase group-hover:text-white transition-colors">
+                    {day.date}
+                  </span>
+                </div>
+
+                {/* 3. SISI KANAN (DAI) -> Pakai flex-row (default) agar bar tumbuh dari kiri ke kanan */}
+                <div className="flex flex-row items-center w-full h-6 relative">
+                  {/* Bar Biru */}
+                  <div
+                    style={{ width: `${widthDAI}%` }}
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-900 rounded-r-sm shadow-[0_0_10px_rgba(59,130,246,0.3)] transition-all duration-500"
+                  ></div>
+
+                  {/* Label Angka (Muncul saat hover, di ujung kanan bar) */}
+                  <span className="ml-3 text-[10px] text-blue-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    ${day.DAI.toFixed(2)}
+                  </span>
+                </div>
               </div>
             );
           })}
-        </div>
-
-        {/* Legend */}
-        <div className="flex justify-center gap-6 mt-6">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gradient-to-br from-green-500 to-green-400 rounded"></div>
-            <span className="text-xs text-gray-400">USDT</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-blue-400 rounded"></div>
-            <span className="text-xs text-gray-400">DAI</span>
-          </div>
         </div>
       </div>
     </div>
@@ -590,19 +631,21 @@ function EnterpriseDashboard() {
     args: address ? [address, DAI_ADDRESS] : undefined,
   });
 
-  const { data: treasuryBalanceUSDT, refetch: refetchBalanceUSDT } = useReadContract({
-    abi: ENTERPRISE_ABI,
-    address: ENTERPRISE_ADDRESS,
-    functionName: "getDeposit",
-    args: address ? [address, USDT_ADDRESS] : undefined,
-  });
+  const { data: treasuryBalanceUSDT, refetch: refetchBalanceUSDT } =
+    useReadContract({
+      abi: ENTERPRISE_ABI,
+      address: ENTERPRISE_ADDRESS,
+      functionName: "getDeposit",
+      args: address ? [address, USDT_ADDRESS] : undefined,
+    });
 
-  const { data: treasuryBalanceDAI, refetch: refetchBalanceDAI } = useReadContract({
-    abi: ENTERPRISE_ABI,
-    address: ENTERPRISE_ADDRESS,
-    functionName: "getDeposit",
-    args: address ? [address, DAI_ADDRESS] : undefined,
-  });
+  const { data: treasuryBalanceDAI, refetch: refetchBalanceDAI } =
+    useReadContract({
+      abi: ENTERPRISE_ABI,
+      address: ENTERPRISE_ADDRESS,
+      functionName: "getDeposit",
+      args: address ? [address, DAI_ADDRESS] : undefined,
+    });
 
   const displayYield =
     treasuryViewToken === USDT_ADDRESS ? yieldUSDT : yieldDAI;
@@ -781,7 +824,7 @@ function EnterpriseDashboard() {
     if (rows.length === 1 && !rows[0].address && !rows[0].amount) {
       setRows(newRows);
     } else {
-      setRows(prev => [...prev, ...newRows]);
+      setRows((prev) => [...prev, ...newRows]);
     }
   };
 
@@ -889,22 +932,25 @@ function EnterpriseDashboard() {
               <div className="flex bg-black/40 p-1 rounded-xl border border-yellow-500/20 backdrop-blur-sm">
                 <button
                   onClick={() => setTreasuryViewToken(USDT_ADDRESS)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${treasuryViewToken === USDT_ADDRESS
-                    ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
-                    : "text-gray-500 hover:text-yellow-500"
-                    }`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${
+                    treasuryViewToken === USDT_ADDRESS
+                      ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
+                      : "text-gray-500 hover:text-yellow-500"
+                  }`}
                 >
                   {treasuryViewToken === USDT_ADDRESS && <FaCheck size={8} />}{" "}
                   USDT
                 </button>
                 <button
                   onClick={() => setTreasuryViewToken(DAI_ADDRESS)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${treasuryViewToken === DAI_ADDRESS
-                    ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
-                    : "text-gray-500 hover:text-yellow-500"
-                    }`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${
+                    treasuryViewToken === DAI_ADDRESS
+                      ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
+                      : "text-gray-500 hover:text-yellow-500"
+                  }`}
                 >
-                  {treasuryViewToken === DAI_ADDRESS && <FaCheck size={8} />} DAI
+                  {treasuryViewToken === DAI_ADDRESS && <FaCheck size={8} />}{" "}
+                  DAI
                 </button>
               </div>
             </div>
@@ -936,7 +982,7 @@ function EnterpriseDashboard() {
                   className="w-full bg-[#050505] border border-yellow-900/40 rounded-xl px-5 py-4 text-white focus:border-yellow-500 outline-none text-lg font-mono transition-colors group-hover/input:border-yellow-700/60"
                 />
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xs font-bold text-yellow-600 bg-yellow-900/10 px-2 py-1 rounded">
-                  DEP {treasurySymbol}
+                  {treasurySymbol}
                 </span>
               </div>
 
@@ -946,7 +992,7 @@ function EnterpriseDashboard() {
                   disabled={isDepPending || isDepConfirming}
                   className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(202,138,4,0.2)]"
                 >
-                  {isDepPending ? "Approving Access..." : "1. Approve Contract"}
+                  {isDepPending ? "Approving Access..." : "Approve Contract"}
                 </button>
               ) : (
                 <button
@@ -956,7 +1002,7 @@ function EnterpriseDashboard() {
                 >
                   {isDepPending || isDepConfirming
                     ? "Processing Deposit..."
-                    : "2. Deposit to Pool"}
+                    : "Deposit to Pool"}
                 </button>
               )}
             </div>
@@ -1004,19 +1050,21 @@ function EnterpriseDashboard() {
               <div className="flex bg-[#151515] p-1.5 rounded-xl border border-white/5">
                 <button
                   onClick={() => setMode("MANUAL")}
-                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${mode === "MANUAL"
-                    ? "bg-yellow-600 text-black shadow-lg"
-                    : "text-gray-500 hover:text-white"
-                    }`}
+                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                    mode === "MANUAL"
+                      ? "bg-yellow-600 text-black shadow-lg"
+                      : "text-gray-500 hover:text-white"
+                  }`}
                 >
                   Manual
                 </button>
                 <button
                   onClick={() => setMode("CSV")}
-                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${mode === "CSV"
-                    ? "bg-yellow-600 text-black shadow-lg"
-                    : "text-gray-500 hover:text-white"
-                    }`}
+                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                    mode === "CSV"
+                      ? "bg-yellow-600 text-black shadow-lg"
+                      : "text-gray-500 hover:text-white"
+                  }`}
                 >
                   CSV Upload
                 </button>
@@ -1163,30 +1211,32 @@ function EnterpriseDashboard() {
                   <div className="flex flex-col items-end gap-1">
                     {totalPayrollUSDT > 0 && (
                       <p
-                        className={`text-xs font-bold ${parseFloat(formatEther(yieldUSDT || 0n)) >=
+                        className={`text-xs font-bold ${
+                          parseFloat(formatEther(yieldUSDT || 0n)) >=
                           totalPayrollUSDT
-                          ? "text-green-500"
-                          : "text-red-500"
-                          }`}
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
                       >
                         USDT:{" "}
                         {parseFloat(formatEther(yieldUSDT || 0n)) >=
-                          totalPayrollUSDT
+                        totalPayrollUSDT
                           ? "Covered"
                           : "Insufficient"}
                       </p>
                     )}
                     {totalPayrollDAI > 0 && (
                       <p
-                        className={`text-xs font-bold ${parseFloat(formatEther(yieldDAI || 0n)) >=
+                        className={`text-xs font-bold ${
+                          parseFloat(formatEther(yieldDAI || 0n)) >=
                           totalPayrollDAI
-                          ? "text-green-500"
-                          : "text-red-500"
-                          }`}
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
                       >
                         DAI:{" "}
                         {parseFloat(formatEther(yieldDAI || 0n)) >=
-                          totalPayrollDAI
+                        totalPayrollDAI
                           ? "Covered"
                           : "Insufficient"}
                       </p>
@@ -1231,7 +1281,6 @@ function EnterpriseDashboard() {
               >
                 <FaClock /> Schedule for Later
               </button>
-
 
               {/* Address Book Modal */}
               {showAddressBookModal && (

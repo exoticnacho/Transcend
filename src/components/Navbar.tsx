@@ -102,7 +102,7 @@ export default function Navbar() {
     : "0";
 
   const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: <FaChartPie /> },
+    { name: "Public", href: "/dashboard", icon: <FaChartPie /> },
     { name: "Enterprise", href: "/enterprise", icon: <FaBuilding /> },
     {
       name: "History",

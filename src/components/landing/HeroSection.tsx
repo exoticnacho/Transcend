@@ -22,7 +22,7 @@ export default function HeroSection() {
       </h1>
 
       <p className="text-base sm:text-lg md:text-xl text-white max-w-xl md:max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2 font-medium opacity-90">
-        Experience the fastest and efficient way to distribute assets
+        Run payroll and mass payouts in one secure, scalable workflow.
       </p>
 
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto px-4 sm:px-0">
@@ -31,7 +31,7 @@ export default function HeroSection() {
           className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-4 rounded-full text-base sm:text-lg font-bold transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] active:scale-95"
         >
           <FaRocket className="text-red-600 group-hover:rotate-12 transition-transform" />
-          Launch App
+          Launch dApp
         </Link>
 
         <a
