@@ -246,6 +246,14 @@ function DashboardForm() {
       setAllowanceDAI(rawAllowanceDAI as bigint);
   }, [rawAllowanceUSDT, rawAllowanceDAI]);
 
+  // Read platform fee
+  const { data: platformFeeBps } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: MULTI_SENDER_ABI,
+    functionName: "feeBps",
+  });
+
+
   // Write Contract
   const {
     writeContract,
@@ -393,12 +401,17 @@ function DashboardForm() {
         }
       }
 
+      // Calculate fee for native tokens
+      const feeBps = platformFeeBps || 50n; // Default 0.5%
+      const nativeFee = (totalValueNative * feeBps) / 10000n;
+      const totalWithFee = totalValueNative + nativeFee;
+
       writeContract({
         address: CONTRACT_ADDRESS,
         abi: MULTI_SENDER_ABI,
         functionName: "multiPay",
         args: [recipients, tokens, amounts],
-        value: totalValueNative,
+        value: totalWithFee, // Include fee in msg.value
       });
     } catch (err) {
       console.error(err);
@@ -643,6 +656,102 @@ function DashboardForm() {
                 )}
               </div>
             )}
+
+            {/* Fee Preview */}
+            {isConnected && rows.some(r => r.address && r.amount) && (() => {
+              const feeBps = Number(platformFeeBps || 50n);
+              let totalNative = 0, totalUSDT = 0, totalDAI = 0;
+              let feeNative = 0, feeUSDT = 0, feeDAI = 0;
+
+              rows.forEach(row => {
+                if (!row.address || !row.amount) return;
+                const amount = parseFloat(row.amount);
+                const fee = (amount * feeBps) / 10000;
+
+                if (row.tokenType === "NATIVE") {
+                  totalNative += amount;
+                  feeNative += fee;
+                } else if (row.tokenType === "USDT") {
+                  totalUSDT += amount;
+                  feeUSDT += fee;
+                } else {
+                  totalDAI += amount;
+                  feeDAI += fee;
+                }
+              });
+
+              if (totalNative === 0 && totalUSDT === 0 && totalDAI === 0) return null;
+
+              return (
+                <div className="mb-4 bg-[#0A0A0A] border border-red-500/30 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 uppercase mb-3 font-bold tracking-widest">
+                    Transaction Summary
+                  </p>
+
+                  {totalNative > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">LSK Amount:</span>
+                        <span className="text-white font-mono">{totalNative.toFixed(4)} LSK</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">Platform Fee (0.5%):</span>
+                        <span className="text-yellow-500 font-mono">+{feeNative.toFixed(4)} LSK</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {totalUSDT > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">USDT Amount:</span>
+                        <span className="text-white font-mono">{totalUSDT.toFixed(2)} USDT</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">Platform Fee (0.5%):</span>
+                        <span className="text-yellow-500 font-mono">+{feeUSDT.toFixed(2)} USDT</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {totalDAI > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">DAI Amount:</span>
+                        <span className="text-white font-mono">{totalDAI.toFixed(2)} DAI</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">Platform Fee (0.5%):</span>
+                        <span className="text-yellow-500 font-mono">+{feeDAI.toFixed(2)} DAI</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t border-white/10 mt-3 pt-3">
+                    <div className="flex justify-between text-sm font-bold">
+                      <span className="text-white">You'll Pay:</span>
+                      <div className="text-right">
+                        {totalNative > 0 && (
+                          <div className="text-white font-mono">
+                            {(totalNative + feeNative).toFixed(4)} LSK
+                          </div>
+                        )}
+                        {totalUSDT > 0 && (
+                          <div className="text-white font-mono">
+                            {(totalUSDT + feeUSDT).toFixed(2)} USDT
+                          </div>
+                        )}
+                        {totalDAI > 0 && (
+                          <div className="text-white font-mono">
+                            {(totalDAI + feeDAI).toFixed(2)} DAI
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {!isConnected ? (
               <button

@@ -647,6 +647,14 @@ function EnterpriseDashboard() {
       args: address ? [address, DAI_ADDRESS] : undefined,
     });
 
+  // Read platform fee
+  const { data: platformFeeBps } = useReadContract({
+    abi: ENTERPRISE_ABI,
+    address: ENTERPRISE_ADDRESS,
+    functionName: "feeBps",
+  });
+
+
   const displayYield =
     treasuryViewToken === USDT_ADDRESS ? yieldUSDT : yieldDAI;
 
@@ -932,22 +940,20 @@ function EnterpriseDashboard() {
               <div className="flex bg-black/40 p-1 rounded-xl border border-yellow-500/20 backdrop-blur-sm">
                 <button
                   onClick={() => setTreasuryViewToken(USDT_ADDRESS)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${
-                    treasuryViewToken === USDT_ADDRESS
-                      ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
-                      : "text-gray-500 hover:text-yellow-500"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${treasuryViewToken === USDT_ADDRESS
+                    ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
+                    : "text-gray-500 hover:text-yellow-500"
+                    }`}
                 >
                   {treasuryViewToken === USDT_ADDRESS && <FaCheck size={8} />}{" "}
                   USDT
                 </button>
                 <button
                   onClick={() => setTreasuryViewToken(DAI_ADDRESS)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${
-                    treasuryViewToken === DAI_ADDRESS
-                      ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
-                      : "text-gray-500 hover:text-yellow-500"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${treasuryViewToken === DAI_ADDRESS
+                    ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20"
+                    : "text-gray-500 hover:text-yellow-500"
+                    }`}
                 >
                   {treasuryViewToken === DAI_ADDRESS && <FaCheck size={8} />}{" "}
                   DAI
@@ -1050,21 +1056,19 @@ function EnterpriseDashboard() {
               <div className="flex bg-[#151515] p-1.5 rounded-xl border border-white/5">
                 <button
                   onClick={() => setMode("MANUAL")}
-                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                    mode === "MANUAL"
-                      ? "bg-yellow-600 text-black shadow-lg"
-                      : "text-gray-500 hover:text-white"
-                  }`}
+                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${mode === "MANUAL"
+                    ? "bg-yellow-600 text-black shadow-lg"
+                    : "text-gray-500 hover:text-white"
+                    }`}
                 >
                   Manual
                 </button>
                 <button
                   onClick={() => setMode("CSV")}
-                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
-                    mode === "CSV"
-                      ? "bg-yellow-600 text-black shadow-lg"
-                      : "text-gray-500 hover:text-white"
-                  }`}
+                  className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${mode === "CSV"
+                    ? "bg-yellow-600 text-black shadow-lg"
+                    : "text-gray-500 hover:text-white"
+                    }`}
                 >
                   CSV Upload
                 </button>
@@ -1211,32 +1215,30 @@ function EnterpriseDashboard() {
                   <div className="flex flex-col items-end gap-1">
                     {totalPayrollUSDT > 0 && (
                       <p
-                        className={`text-xs font-bold ${
-                          parseFloat(formatEther(yieldUSDT || 0n)) >=
+                        className={`text-xs font-bold ${parseFloat(formatEther(yieldUSDT || 0n)) >=
                           totalPayrollUSDT
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }`}
+                          ? "text-green-500"
+                          : "text-red-500"
+                          }`}
                       >
                         USDT:{" "}
                         {parseFloat(formatEther(yieldUSDT || 0n)) >=
-                        totalPayrollUSDT
+                          totalPayrollUSDT
                           ? "Covered"
                           : "Insufficient"}
                       </p>
                     )}
                     {totalPayrollDAI > 0 && (
                       <p
-                        className={`text-xs font-bold ${
-                          parseFloat(formatEther(yieldDAI || 0n)) >=
+                        className={`text-xs font-bold ${parseFloat(formatEther(yieldDAI || 0n)) >=
                           totalPayrollDAI
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }`}
+                          ? "text-green-500"
+                          : "text-red-500"
+                          }`}
                       >
                         DAI:{" "}
                         {parseFloat(formatEther(yieldDAI || 0n)) >=
-                        totalPayrollDAI
+                          totalPayrollDAI
                           ? "Covered"
                           : "Insufficient"}
                       </p>
@@ -1253,6 +1255,63 @@ function EnterpriseDashboard() {
               {payError && (
                 <div className="mb-4 p-4 bg-red-900/20 border border-red-500/30 text-red-400 rounded-xl flex items-center gap-3">
                   <FaCircleExclamation /> {payError.message.split("\n")[0]}
+                </div>
+              )}
+
+              {/* Fee Preview */}
+              {(totalPayrollUSDT > 0 || totalPayrollDAI > 0) && (
+                <div className="mb-4 bg-[#0A0A0A] border border-yellow-500/30 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 uppercase mb-3 font-bold tracking-widest">
+                    Transaction Summary
+                  </p>
+
+                  {totalPayrollUSDT > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">Total Payroll (USDT):</span>
+                        <span className="text-white font-mono">{totalPayrollUSDT.toFixed(2)} USDT</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">Platform Fee (0.3%):</span>
+                        <span className="text-yellow-500 font-mono">
+                          +{((totalPayrollUSDT * Number(platformFeeBps || 30n)) / 10000).toFixed(2)} USDT
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {totalPayrollDAI > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">Total Payroll (DAI):</span>
+                        <span className="text-white font-mono">{totalPayrollDAI.toFixed(2)} DAI</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-400">Platform Fee (0.3%):</span>
+                        <span className="text-yellow-500 font-mono">
+                          +{((totalPayrollDAI * Number(platformFeeBps || 30n)) / 10000).toFixed(2)} DAI
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t border-white/10 mt-3 pt-3">
+                    <div className="flex justify-between text-sm font-bold">
+                      <span className="text-white">Deducted from Pool:</span>
+                      <div className="text-right">
+                        {totalPayrollUSDT > 0 && (
+                          <div className="text-white font-mono">
+                            {(totalPayrollUSDT + (totalPayrollUSDT * Number(platformFeeBps || 30n)) / 10000).toFixed(2)} USDT
+                          </div>
+                        )}
+                        {totalPayrollDAI > 0 && (
+                          <div className="text-white font-mono">
+                            {(totalPayrollDAI + (totalPayrollDAI * Number(platformFeeBps || 30n)) / 10000).toFixed(2)} DAI
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
