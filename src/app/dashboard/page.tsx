@@ -542,7 +542,7 @@ function DashboardForm() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <button
                   onClick={() => setShowAddressBookModal(true)}
                   className="w-full py-3.5 border border-white/10 rounded-2xl text-gray-400 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-bold group"

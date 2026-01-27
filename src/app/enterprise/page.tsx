@@ -179,15 +179,17 @@ function TreasuryAnalytics({
   return (
     <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4 mb-4 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0 mb-5">
         <div>
-          <h3 className="text-sm font-semibold text-white">Treasury Pool Composition</h3>
-          <p className="text-[10px] text-gray-500">7-day asset distribution</p>
+          <h3 className="text-2xl font-bold text-white tracking-tight mb-0.5">
+            Treasury Overview
+          </h3>
+          <p className="text-sm text-gray-400 font-medium">Real-time asset allocation & yield</p>
         </div>
 
-        <div className="text-right">
-          <p className="text-[10px] text-gray-500">Total Value</p>
-          <p className="text-xl font-bold text-white font-mono">
+        <div className="text-left sm:text-right bg-white/5 sm:bg-transparent p-3 sm:p-0 rounded-lg sm:rounded-none border border-white/5 sm:border-none">
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Total Liquidity</p>
+          <p className="text-2xl font-bold text-white font-mono tracking-tighter">
             ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
@@ -227,7 +229,7 @@ function TreasuryAnalytics({
                 borderRadius: '8px',
                 fontSize: '12px'
               }}
-              formatter={(value: number) => [`$${value.toFixed(2)}`, '']}
+              formatter={(value: any) => [`$${Number(value || 0).toFixed(2)}`, '']}
               labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
             />
             <Area
@@ -949,7 +951,7 @@ function EnterpriseDashboard() {
           <div className="bg-[#0A0A0A] border border-yellow-600/30 rounded-3xl p-8 shadow-2xl relative overflow-hidden group h-full flex flex-col">
             <div className="absolute inset-0 bg-linear-to-br from-yellow-500/10 to-transparent pointer-events-none"></div>
 
-            <div className="flex items-center justify-between mb-8 relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 relative z-10 gap-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-3">
                 <span className="w-10 h-10 bg-linear-to-b from-yellow-400 to-yellow-700 rounded-lg flex items-center justify-center text-black shadow-lg">
                   <FaLandmark />
@@ -965,7 +967,7 @@ function EnterpriseDashboard() {
               </h3>
 
               {/* VIEW SELECTOR */}
-              <div className="flex bg-black/40 p-1 rounded-xl border border-yellow-500/20 backdrop-blur-sm">
+              <div className="flex bg-black/40 p-1 rounded-xl border border-yellow-500/20 backdrop-blur-sm self-start sm:self-auto">
                 <button
                   onClick={() => setTreasuryViewToken(USDT_ADDRESS)}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center gap-2 ${treasuryViewToken === USDT_ADDRESS
@@ -1165,7 +1167,7 @@ function EnterpriseDashboard() {
                     </div>
                   ))}
 
-                  <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                     <button
                       onClick={() => setShowAddressBookModal(true)}
                       className="w-full py-3 border border-white/10 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium"
