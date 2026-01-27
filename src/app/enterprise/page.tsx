@@ -19,7 +19,8 @@ import {
 import { config } from "@/utils/config";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import dynamicImport from "next/dynamic";
-import { useEffect, useRef, useState } from "react"; // FIX: Tambahkan useRef
+import React, { useEffect, useRef, useState } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   FaAddressBook,
   FaBriefcase,
@@ -35,6 +36,8 @@ import {
   FaTrash,
   FaUserTie,
   FaVault,
+  FaCircleQuestion,
+  FaXmark,
 } from "react-icons/fa6";
 import { formatEther, isAddress, maxUint256, parseEther } from "viem";
 import {
@@ -141,7 +144,6 @@ function TreasuryAnalytics({
   usdtYield: bigint | undefined;
   daiYield: bigint | undefined;
 }) {
-  // 1. Hitung Realtime Value
   const valUSDT = usdtBalance ? parseFloat(formatEther(usdtBalance)) : 0;
   const valDAI = daiBalance ? parseFloat(formatEther(daiBalance)) : 0;
   const yieldValUSDT = usdtYield ? parseFloat(formatEther(usdtYield)) : 0;
@@ -149,129 +151,117 @@ function TreasuryAnalytics({
 
   const totalUSDT = valUSDT + yieldValUSDT;
   const totalDAI = valDAI + yieldValDAI;
-
-  // Total Gabungan untuk Kotak "Awal"
   const grandTotal = totalUSDT + totalDAI;
 
-  // 2. Generate Dummy Historical Data
-  const generateChartData = () => {
+  // Generate realistic historical data (7 days)
+  const chartData = React.useMemo(() => {
     const data = [];
+    const today = new Date();
+
     for (let i = 6; i >= 0; i--) {
-      const dayAgo = new Date();
-      dayAgo.setDate(dayAgo.getDate() - i);
-      const label = dayAgo.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+
+      // Simulate gradual growth
       const growthFactor = (6 - i) / 6;
+      const variance = 0.95 + Math.random() * 0.1; // Add slight randomness
 
       data.push({
-        date: label,
-        USDT: Math.max(0, valUSDT - yieldValUSDT * 0.5 * (1 - growthFactor)),
-        DAI: Math.max(0, valDAI - yieldValDAI * 0.5 * (1 - growthFactor)),
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        USDT: i === 0 ? totalUSDT : totalUSDT * growthFactor * variance,
+        DAI: i === 0 ? totalDAI : totalDAI * growthFactor * variance,
       });
     }
-    // Update hari terakhir dengan data real
-    data[6].USDT = totalUSDT;
-    data[6].DAI = totalDAI;
-    return data;
-  };
 
-  const chartData = generateChartData();
-  const maxValue =
-    Math.max(...chartData.map((d) => Math.max(d.USDT, d.DAI))) || 1;
+    return data;
+  }, [totalUSDT, totalDAI]);
 
   return (
-    <div className="bg-[#0A0A0A] border border-yellow-600/30 rounded-3xl p-6 sm:p-8 mb-8 shadow-2xl relative overflow-hidden">
-      <div className="absolute inset-0 bg-linear-to-br from-yellow-500/5 to-transparent pointer-events-none"></div>
-
-      <div className="relative z-10">
-        {/* --- HEADER: JUDUL KIRI, KOTAK TOTAL KANAN (STYLE ORIGINAL) --- */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-6">
-          <div>
-            <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3 mb-2">
-              <FaGears className="text-yellow-500" />
-              Treasury Analytics
-            </h3>
-            <p className="text-sm text-gray-400">
-              Yield performance & asset distribution.
-            </p>
-          </div>
-
-          {/* Kotak Besar Total Assets */}
-          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-xl px-5 py-3 text-right min-w-[160px]">
-            <p className="text-[10px] text-yellow-600 font-bold uppercase tracking-widest mb-1">
-              Total Assets
-            </p>
-            <p className="text-3xl font-bold text-yellow-400 font-mono">
-              $
-              {grandTotal.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </p>
-          </div>
+    <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4 mb-4 backdrop-blur-sm">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-3">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Treasury Pool Composition</h3>
+          <p className="text-[10px] text-gray-500">7-day asset distribution</p>
         </div>
 
-        {/* Legend / Label Header */}
-        <div className="grid grid-cols-[1fr_auto_1fr] gap-4 mb-4 text-[10px] font-bold uppercase tracking-widest text-gray-500 px-2">
-          <div className="text-right text-green-500 flex items-center justify-end gap-2">
-            USDT Pool <div className="w-2 h-2 rounded-full bg-green-500"></div>
-          </div>
-          <div className="text-center w-[60px]">Date</div>
-          <div className="text-left text-blue-500 flex items-center justify-start gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div> DAI Pool
-          </div>
+        <div className="text-right">
+          <p className="text-[10px] text-gray-500">Total Value</p>
+          <p className="text-xl font-bold text-white font-mono">
+            ${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="h-[160px] -mx-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorUSDT" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="colorDAI" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+            <XAxis
+              dataKey="date"
+              stroke="#6b7280"
+              style={{ fontSize: '11px' }}
+              tickLine={false}
+            />
+            <YAxis
+              stroke="#6b7280"
+              style={{ fontSize: '11px' }}
+              tickLine={false}
+              tickFormatter={(value) => `$${value.toFixed(0)}`}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#1a1a1a',
+                border: '1px solid #333',
+                borderRadius: '8px',
+                fontSize: '12px'
+              }}
+              formatter={(value: number) => [`$${value.toFixed(2)}`, '']}
+              labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
+            />
+            <Area
+              type="monotone"
+              dataKey="USDT"
+              stroke="#10b981"
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorUSDT)"
+            />
+            <Area
+              type="monotone"
+              dataKey="DAI"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorDAI)"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Legend & Stats */}
+      <div className="flex items-center justify-center gap-6 mt-3 pt-3 border-t border-white/5">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-sm bg-green-500"></div>
+          <span className="text-xs text-gray-400">USDT</span>
+          <span className="text-sm font-semibold text-white font-mono">${totalUSDT.toFixed(2)}</span>
         </div>
 
-        {/* --- DIVERGING CHART (MIRROR STYLE) --- */}
-        <div className="flex flex-col gap-3">
-          {chartData.map((day, i) => {
-            const widthUSDT = (day.USDT / maxValue) * 100;
-            const widthDAI = (day.DAI / maxValue) * 100;
-
-            return (
-              <div
-                key={i}
-                className="grid grid-cols-[1fr_60px_1fr] gap-4 items-center group hover:bg-white/5 p-1 rounded-lg transition-colors"
-              >
-                {/* 1. SISI KIRI (USDT) -> Pakai flex-row-reverse agar bar tumbuh dari kanan ke kiri */}
-                <div className="flex flex-row-reverse items-center w-full h-6 relative">
-                  {/* Bar Hijau */}
-                  <div
-                    style={{ width: `${widthUSDT}%` }}
-                    className="h-full bg-gradient-to-l from-green-500 to-green-900 rounded-l-sm shadow-[0_0_10px_rgba(34,197,94,0.3)] transition-all duration-500"
-                  ></div>
-
-                  {/* Label Angka (Muncul saat hover, di ujung kiri bar) */}
-                  <span className="mr-3 text-[10px] text-green-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    ${day.USDT.toFixed(2)}
-                  </span>
-                </div>
-
-                {/* 2. TENGAH (TANGGAL) */}
-                <div className="flex justify-center items-center h-6">
-                  <span className="text-[10px] text-gray-500 font-mono font-bold uppercase group-hover:text-white transition-colors">
-                    {day.date}
-                  </span>
-                </div>
-
-                {/* 3. SISI KANAN (DAI) -> Pakai flex-row (default) agar bar tumbuh dari kiri ke kanan */}
-                <div className="flex flex-row items-center w-full h-6 relative">
-                  {/* Bar Biru */}
-                  <div
-                    style={{ width: `${widthDAI}%` }}
-                    className="h-full bg-gradient-to-r from-blue-500 to-blue-900 rounded-r-sm shadow-[0_0_10px_rgba(59,130,246,0.3)] transition-all duration-500"
-                  ></div>
-
-                  {/* Label Angka (Muncul saat hover, di ujung kanan bar) */}
-                  <span className="ml-3 text-[10px] text-blue-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    ${day.DAI.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-sm bg-blue-500"></div>
+          <span className="text-xs text-gray-400">DAI</span>
+          <span className="text-sm font-semibold text-white font-mono">${totalDAI.toFixed(2)}</span>
         </div>
       </div>
     </div>
@@ -279,10 +269,18 @@ function TreasuryAnalytics({
 }
 
 // --- ADMIN / DEMO PANEL COMPONENT (FIXED FOR PHYSICAL YIELD) ---
-function AdminPanel({ onClose }: { onClose: () => void }) {
-  const { address } = useAccount(); // Akses address
-  const { writeContract, isPending } = useWriteContract();
+function AdminPanel({ onClose, onRefresh }: { onClose: () => void; onRefresh: () => void }) {
+  const { address } = useAccount();
+  const { writeContract, data: hash, isPending } = useWriteContract();
+  const { isSuccess } = useWaitForTransactionReceipt({ hash });
   const [injectAmount, setInjectAmount] = useState("500");
+
+  // Auto-refresh when transaction succeeds
+  useEffect(() => {
+    if (isSuccess) {
+      onRefresh();
+    }
+  }, [isSuccess, onRefresh]);
 
   // Read Allowance untuk Yield Inject (Perlu Approve Baru)
   const { data: allowanceUSDT, refetch: refetchAllowanceUSDT } =
@@ -438,7 +436,6 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
 function EnterpriseManager() {
   const { address, isConnected } = useAccount();
   const [mounted, setMounted] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -481,25 +478,7 @@ function EnterpriseManager() {
     return <RegisterView onSuccess={refetchCompany} />;
   }
 
-  return (
-    <>
-      <EnterpriseDashboard />
-
-      {/* ADMIN TOGGLE BUTTON (HIDDEN BOTTOM LEFT) */}
-      <div className="fixed bottom-4 left-4 z-50">
-        <button
-          onClick={() => setShowAdmin(!showAdmin)}
-          className="p-3 bg-gray-900/80 hover:bg-red-900/80 text-gray-500 hover:text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer"
-          title="Toggle Admin/Demo Panel"
-        >
-          {showAdmin ? <FaLock /> : <FaGears />}
-        </button>
-      </div>
-
-      {/* ADMIN PANEL */}
-      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
-    </>
-  );
+  return <EnterpriseDashboard />;
 }
 
 function RegisterView({ onSuccess }: { onSuccess: () => void }) {
@@ -568,6 +547,7 @@ function EnterpriseDashboard() {
   const { address } = useAccount();
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const [treasuryViewToken, setTreasuryViewToken] =
     useState<`0x${string}`>(USDT_ADDRESS);
@@ -578,7 +558,7 @@ function EnterpriseDashboard() {
     isPending: isDepPending,
     data: depHash,
   } = useWriteContract();
-  const { isLoading: isDepConfirming } = useWaitForTransactionReceipt({
+  const { isLoading: isDepConfirming, isSuccess: isDepSuccess } = useWaitForTransactionReceipt({
     hash: depHash,
   });
 
@@ -587,7 +567,7 @@ function EnterpriseDashboard() {
     isPending: isWithPending,
     data: withHash,
   } = useWriteContract();
-  const { isLoading: isWithConfirming } = useWaitForTransactionReceipt({
+  const { isLoading: isWithConfirming, isSuccess: isWithSuccess } = useWaitForTransactionReceipt({
     hash: withHash,
   });
 
@@ -600,6 +580,7 @@ function EnterpriseDashboard() {
   const [showAddressBookModal, setShowAddressBookModal] = useState(false);
   const { addSchedule } = useScheduler();
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const {
     writeContract: writePayroll,
@@ -912,6 +893,46 @@ function EnterpriseDashboard() {
     refetchBalanceDAI,
   ]);
 
+  // Specific refetch on Deposit/Approve Success to update UI immediately
+  useEffect(() => {
+    if (isDepSuccess) {
+      refetchAllowance();
+      refetchYieldUSDT();
+      refetchYieldDAI();
+      refetchBalanceUSDT();
+      refetchBalanceDAI();
+    }
+  }, [isDepSuccess, refetchAllowance, refetchYieldUSDT, refetchYieldDAI, refetchBalanceUSDT, refetchBalanceDAI]);
+
+  // Auto-refresh on Withdraw Success
+  useEffect(() => {
+    if (isWithSuccess) {
+      refetchYieldUSDT();
+      refetchYieldDAI();
+      refetchBalanceUSDT();
+      refetchBalanceDAI();
+    }
+  }, [isWithSuccess, refetchYieldUSDT, refetchYieldDAI, refetchBalanceUSDT, refetchBalanceDAI]);
+
+  // Auto-refresh on Payroll Success
+  useEffect(() => {
+    if (isPaySuccess) {
+      refetchYieldUSDT();
+      refetchYieldDAI();
+      refetchBalanceUSDT();
+      refetchBalanceDAI();
+    }
+  }, [isPaySuccess, refetchYieldUSDT, refetchYieldDAI, refetchBalanceUSDT, refetchBalanceDAI]);
+
+  // Helper function to refetch all data (for AdminPanel callback)
+  const refetchAll = () => {
+    refetchAllowance();
+    refetchYieldUSDT();
+    refetchYieldDAI();
+    refetchBalanceUSDT();
+    refetchBalanceDAI();
+  };
+
   return (
     <>
       {/* Treasury Analytics Chart */}
@@ -934,6 +955,13 @@ function EnterpriseDashboard() {
                   <FaLandmark />
                 </span>
                 Treasury
+                <button
+                  onClick={() => setShowHelp(true)}
+                  className="text-white/30 hover:text-yellow-500 transition-colors ml-2"
+                  title="How to use Enterprise"
+                >
+                  <FaCircleQuestion className="text-sm" />
+                </button>
               </h3>
 
               {/* VIEW SELECTOR */}
@@ -1358,10 +1386,79 @@ function EnterpriseDashboard() {
                   theme="yellow"
                 />
               )}
+
+              {/* Help Modal */}
+              {showHelp && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                  <div className="bg-[#0A0A0A] border border-yellow-500/30 w-full max-w-lg rounded-2xl shadow-2xl p-6 relative">
+                    <button
+                      onClick={() => setShowHelp(false)}
+                      className="absolute top-4 right-4 text-gray-500 hover:text-white"
+                    >
+                      <FaXmark />
+                    </button>
+
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                      <FaCircleQuestion className="text-yellow-500" />
+                      How to use Enterprise
+                    </h3>
+
+                    <div className="space-y-6">
+                      <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 font-bold shrink-0">1</div>
+                        <div>
+                          <h4 className="text-white font-bold mb-1">Get Mock Tokens</h4>
+                          <p className="text-gray-400 text-sm">Use the Faucet on the <a href="/dashboard" className="text-yellow-500 underline">Dashboard</a> to get free Mock tokens.</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 font-bold shrink-0">2</div>
+                        <div>
+                          <h4 className="text-white font-bold mb-1">Approve & Deposit</h4>
+                          <p className="text-gray-400 text-sm">
+                            Click <b>"Approve Token"</b> to authorize the contract. <br />
+                            Once approved, the button changes to <b>"Deposit"</b> automatically.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 font-bold shrink-0">3</div>
+                        <div>
+                          <h4 className="text-white font-bold mb-1">Execute Payroll</h4>
+                          <p className="text-gray-400 text-sm">Funds deducted from Enterprise Pool. 0.3% fee applies.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setShowHelp(false)}
+                      className="mt-8 w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* ADMIN TOGGLE BUTTON (HIDDEN BOTTOM LEFT) */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <button
+          onClick={() => setShowAdmin(!showAdmin)}
+          className="p-3 bg-gray-900/80 hover:bg-red-900/80 text-gray-500 hover:text-white rounded-full transition-all border border-white/10 shadow-lg cursor-pointer"
+          title="Toggle Admin/Demo Panel"
+        >
+          {showAdmin ? <FaLock /> : <FaGears />}
+        </button>
+      </div>
+
+      {/* ADMIN PANEL */}
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} onRefresh={refetchAll} />}
     </>
   );
 }
