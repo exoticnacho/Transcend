@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaMinus, FaPlus } from "react-icons/fa6";
+import { FaCheck, FaMinus, FaPlus } from "react-icons/fa6";
 
 export default function FaqSection() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -10,22 +10,99 @@ export default function FaqSection() {
     setOpenFaq(openFaq === index ? null : index);
   };
 
+  // Helper component untuk list item agar kodenya tidak berantakan
+  const ListItem = ({ text }: { text: string }) => (
+    <li className="flex items-start gap-3">
+      <FaCheck className="mt-1.5 text-red-500 shrink-0 text-sm" />
+      <span className="text-gray-300">{text}</span>
+    </li>
+  );
+
   const faqs = [
     {
-      q: "What makes Mock USDT different from regular USDT?",
-      a: "Mock USDT is a testnet-native stablecoin optimized for the Transcend ecosystem. It allows developers and users to simulate transactions with zero financial risk before going live on Mainnet.",
+      q: "What is Transcend?",
+      a: (
+        <div className="space-y-4 text-gray-400">
+          <p>
+            Transcend is a payroll-focused multi-sender dApp that enables Web3
+            teams and individuals to distribute crypto to multiple wallets in a
+            single, streamlined workflow.
+          </p>
+          <p>
+            It is built for payroll, rewards, and large-scale crypto
+            distributions.
+          </p>
+        </div>
+      ),
     },
     {
-      q: "Is the Enterprise plan customizable?",
-      a: "Absolutely. Our Enterprise solutions are tailored to your specific transaction volume and security requirements. We offer bespoke API limits, multi-sig vaults, and dedicated SLA guarantees.",
+      q: "What problems does Transcend solve?",
+      a: (
+        <div className="space-y-4 text-gray-400">
+          <p>
+            Traditional crypto transfers require sending funds one by one,
+            resulting in repetitive confirmations and high fees. Transcend
+            solves this by:
+          </p>
+          <ul className="space-y-2">
+            <ListItem text="Eliminating repetitive wallet confirmations" />
+            <ListItem text="Reducing overall gas costs significantly" />
+            <ListItem text="Minimizing the risk of human error" />
+          </ul>
+        </div>
+      ),
     },
     {
-      q: "How secure is the platform?",
-      a: "We utilize industry-leading encryption and multi-signature wallet architecture. Our smart contracts undergo rigorous audits by top-tier security firms to ensure maximum fund safety.",
+      q: "What’s the difference between Public and Enterprise Mode?",
+      a: (
+        <div className="space-y-6 text-gray-400">
+          <div>
+            <strong className="text-white block mb-2">Public Mode:</strong>
+            <ul className="space-y-2">
+              <ListItem text="Pay-per-transaction model (0.5% fee)" />
+              <ListItem text="No subscription required" />
+              <ListItem text="Ideal for one-time distributions" />
+            </ul>
+          </div>
+          <div>
+            <strong className="text-white block mb-2">Enterprise Mode:</strong>
+            <ul className="space-y-2">
+              <ListItem text="Subscription-based (Lower 0.3% fee)" />
+              <ListItem text="Includes scheduling & recurring payroll" />
+              <ListItem text="Built for scaling organizations" />
+            </ul>
+          </div>
+        </div>
+      ),
     },
     {
-      q: "Can I integrate Transcend into my existing dApp?",
-      a: "Yes! We provide comprehensive SDKs and REST APIs designed for seamless integration into any React, Vue, or Node.js environment. Check our documentation for code snippets.",
+      q: "Is Transcend secure and non-custodial?",
+      a: (
+        <div className="space-y-4 text-gray-400">
+          <p>Yes. Security is our top priority.</p>
+          <ul className="space-y-2">
+            <ListItem text="Non-custodial: We never hold your funds." />
+            <ListItem text="Audited: Smart contracts undergo rigorous testing." />
+            <ListItem text="Transparent: Explicit approval for every transaction." />
+          </ul>
+        </div>
+      ),
+    },
+    {
+      q: "Which networks does Transcend currently support?",
+      a: (
+        <div className="space-y-4 text-gray-400">
+          <p>
+            Transcend is launching first on{" "}
+            <strong>Lisk Sepolia Testnet</strong>, with additional networks
+            planned based on user demand.
+          </p>
+          <p>
+            You can use the testnet faucet to try all features without spending
+            real funds.
+          </p>
+        </div>
+      ),
     },
   ];
 
@@ -74,9 +151,8 @@ export default function FaqSection() {
                 }`}
               >
                 <div className="overflow-hidden px-6">
-                  <p className="text-gray-400 leading-relaxed border-t border-white/5 pt-4">
-                    {faq.a}
-                  </p>
+                  {/* Karena data 'a' sekarang adalah JSX, kita render langsung */}
+                  <div className="border-t border-white/5 pt-4">{faq.a}</div>
                 </div>
               </div>
             </div>
