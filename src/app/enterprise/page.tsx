@@ -280,7 +280,9 @@ function AdminPanel({ onClose, onRefresh }: { onClose: () => void; onRefresh: ()
   // Auto-refresh when transaction succeeds
   useEffect(() => {
     if (isSuccess) {
-      onRefresh();
+      setTimeout(() => {
+        onRefresh();
+      }, 3000); // 3s delay for consistency
     }
   }, [isSuccess, onRefresh]);
 
@@ -490,7 +492,11 @@ function RegisterView({ onSuccess }: { onSuccess: () => void }) {
   });
 
   useEffect(() => {
-    if (isSuccess) onSuccess();
+    if (isSuccess) {
+      setTimeout(() => {
+        onSuccess();
+      }, 3000); // 3s ensures node update
+    }
   }, [isSuccess, onSuccess]);
 
   return (
@@ -898,31 +904,37 @@ function EnterpriseDashboard() {
   // Specific refetch on Deposit/Approve Success to update UI immediately
   useEffect(() => {
     if (isDepSuccess) {
-      refetchAllowance();
-      refetchYieldUSDT();
-      refetchYieldDAI();
-      refetchBalanceUSDT();
-      refetchBalanceDAI();
+      setTimeout(() => {
+        refetchAllowance();
+        refetchYieldUSDT();
+        refetchYieldDAI();
+        refetchBalanceUSDT();
+        refetchBalanceDAI();
+      }, 2000); // 2s delay
     }
   }, [isDepSuccess, refetchAllowance, refetchYieldUSDT, refetchYieldDAI, refetchBalanceUSDT, refetchBalanceDAI]);
 
   // Auto-refresh on Withdraw Success
   useEffect(() => {
     if (isWithSuccess) {
-      refetchYieldUSDT();
-      refetchYieldDAI();
-      refetchBalanceUSDT();
-      refetchBalanceDAI();
+      setTimeout(() => {
+        refetchYieldUSDT();
+        refetchYieldDAI();
+        refetchBalanceUSDT();
+        refetchBalanceDAI();
+      }, 2000); // 2s delay
     }
   }, [isWithSuccess, refetchYieldUSDT, refetchYieldDAI, refetchBalanceUSDT, refetchBalanceDAI]);
 
   // Auto-refresh on Payroll Success
   useEffect(() => {
     if (isPaySuccess) {
-      refetchYieldUSDT();
-      refetchYieldDAI();
-      refetchBalanceUSDT();
-      refetchBalanceDAI();
+      setTimeout(() => {
+        refetchYieldUSDT();
+        refetchYieldDAI();
+        refetchBalanceUSDT();
+        refetchBalanceDAI();
+      }, 2000); // 2s delay
     }
   }, [isPaySuccess, refetchYieldUSDT, refetchYieldDAI, refetchBalanceUSDT, refetchBalanceDAI]);
 

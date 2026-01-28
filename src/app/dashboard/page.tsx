@@ -46,6 +46,7 @@ import {
   FaWallet,
   FaClock,
   FaAddressBook,
+  FaLock,
 } from "react-icons/fa6";
 
 import ModernToast from "@/components/ModernToast";
@@ -760,43 +761,90 @@ function DashboardForm() {
               >
                 <FaWallet /> Connect Wallet to Start
               </button>
-            ) : needsApproveUSDT ? (
-              <button
-                onClick={() => handleApprove(USDT_ADDRESS)}
-                disabled={!canSubmit}
-                className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold text-lg py-5 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(234,179,8,0.3)] hover:shadow-[0_0_50px_rgba(234,179,8,0.5)] transform active:scale-[0.98]"
-              >
-                {isPending || isConfirming
-                  ? "Approving Access..."
-                  : `Approve USDT (${rows.filter((r) => r.tokenType === "USDT").length
-                  } Transfers)`}
-              </button>
-            ) : needsApproveDAI ? (
-              <button
-                onClick={() => handleApprove(DAI_ADDRESS)}
-                disabled={!canSubmit}
-                className="w-full bg-orange-500 hover:bg-orange-400 text-black font-extrabold text-lg py-5 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:shadow-[0_0_50px_rgba(249,115,22,0.5)] transform active:scale-[0.98]"
-              >
-                {isPending || isConfirming
-                  ? "Approving Access..."
-                  : `Approve DAI (${rows.filter((r) => r.tokenType === "DAI").length
-                  } Transfers)`}
-              </button>
             ) : (
-              <button
-                onClick={handleMultiPay}
-                disabled={!canSubmit}
-                className="w-full bg-linear-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-lg py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] flex items-center justify-center gap-3 group"
-              >
-                {isPending || isConfirming ? (
-                  "Processing Transaction..."
-                ) : (
-                  <>
-                    <FaRocket className="group-hover:rotate-12 transition-transform" />{" "}
-                    Transfer {rows.length} Asset{rows.length > 1 ? "s" : ""}
-                  </>
+              <div className="space-y-4">
+                {/* Approval Steps Indicator */}
+                {(needsApproveUSDT || needsApproveDAI) && (
+                  <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <FaLock className="text-yellow-400 text-sm" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-white font-bold mb-1">Token Approval Required</h4>
+                        <p className="text-gray-400 text-sm leading-relaxed">
+                          Before transferring, you need to approve the contract to spend your tokens. This is a one-time action per token.
+                        </p>
+                        <div className="mt-3 flex items-center gap-2 text-xs">
+                          <div className={`px-3 py-1 rounded-full ${needsApproveUSDT ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
+                            {needsApproveUSDT ? '⏳ USDT Pending' : '✓ USDT Approved'}
+                          </div>
+                          <div className={`px-3 py-1 rounded-full ${needsApproveDAI ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
+                            {needsApproveDAI ? '⏳ DAI Pending' : '✓ DAI Approved'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </button>
+
+                {/* Approval Buttons */}
+                {needsApproveUSDT ? (
+                  <button
+                    onClick={() => handleApprove(USDT_ADDRESS)}
+                    disabled={!canSubmit}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-extrabold text-lg py-5 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(234,179,8,0.3)] hover:shadow-[0_0_50px_rgba(234,179,8,0.5)] transform active:scale-[0.98] flex items-center justify-center gap-3"
+                  >
+                    {isPending || isConfirming ? (
+                      <>
+                        <div className="w-5 h-5 border-3 border-black/30 border-t-black rounded-full animate-spin" />
+                        Approving USDT Access...
+                      </>
+                    ) : (
+                      <>
+                        <FaLock />
+                        Step 1: Approve USDT ({rows.filter((r) => r.tokenType === "USDT").length} transfers)
+                      </>
+                    )}
+                  </button>
+                ) : needsApproveDAI ? (
+                  <button
+                    onClick={() => handleApprove(DAI_ADDRESS)}
+                    disabled={!canSubmit}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-black font-extrabold text-lg py-5 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:shadow-[0_0_50px_rgba(249,115,22,0.5)] transform active:scale-[0.98] flex items-center justify-center gap-3"
+                  >
+                    {isPending || isConfirming ? (
+                      <>
+                        <div className="w-5 h-5 border-3 border-black/30 border-t-black rounded-full animate-spin" />
+                        Approving DAI Access...
+                      </>
+                    ) : (
+                      <>
+                        <FaLock />
+                        Step 1: Approve DAI ({rows.filter((r) => r.tokenType === "DAI").length} transfers)
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleMultiPay}
+                    disabled={!canSubmit}
+                    className="w-full bg-linear-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-extrabold text-lg py-5 rounded-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] flex items-center justify-center gap-3 group"
+                  >
+                    {isPending || isConfirming ? (
+                      <>
+                        <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                        Processing Transaction...
+                      </>
+                    ) : (
+                      <>
+                        <FaRocket className="group-hover:rotate-12 transition-transform" />{" "}
+                        Transfer {rows.length} Asset{rows.length > 1 ? "s" : ""}
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             )}
 
             {/* Address Book Modal */}

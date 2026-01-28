@@ -8,7 +8,7 @@
 export const CONTRACT_ADDRESS = "0x17D9657744FB35a754cfF9796f1cde5c0EF89B1e";
 
 // Contract Enterprise
-export const ENTERPRISE_ADDRESS = "0x07d90448107A2Ed26b721FF66F5cD0F6bC4Fa04f";
+export const ENTERPRISE_ADDRESS = "0x915bb8d10D0c00a22b8E576cB90Cbc82a7E82070";
 
 // Token Mock USDT
 export const USDT_ADDRESS = "0x405dC9bDc2A24037a43Fd7658B2Ec25350555d6A";
@@ -445,7 +445,7 @@ export const ENTERPRISE_ABI = [
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "address",
         "name": "token",
         "type": "address"
@@ -514,43 +514,6 @@ export const ENTERPRISE_ABI = [
       }
     ],
     "name": "PayrollFeeCollected",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "company",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address[]",
-        "name": "recipients",
-        "type": "address[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256[]",
-        "name": "amounts",
-        "type": "uint256[]"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "timestamp",
-        "type": "uint256"
-      }
-    ],
-    "name": "PayrollMultiDetail",
     "type": "event"
   },
   {
@@ -725,36 +688,7 @@ export const ENTERPRISE_ABI = [
         "type": "address"
       }
     ],
-    "name": "getCompanyBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "depositAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "yieldAmount",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "company",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "getCompanyTotalBalance",
+    "name": "getDeposit",
     "outputs": [
       {
         "internalType": "uint256",
@@ -778,7 +712,7 @@ export const ENTERPRISE_ABI = [
         "type": "address"
       }
     ],
-    "name": "getDeposit",
+    "name": "getTotalBalance",
     "outputs": [
       {
         "internalType": "uint256",
@@ -971,7 +905,6 @@ export const ENTERPRISE_ABI = [
     "type": "function"
   }
 ] as const;
-
 export const MOCK_LENDING_ABI = [
   {
     inputs: [
