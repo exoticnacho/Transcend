@@ -373,7 +373,7 @@ function AdminPanel({ onClose, onRefresh }: { onClose: () => void; onRefresh: ()
           {/* 1. WHITELIST SECTION */}
           <div>
             <p className="text-sm font-bold text-white mb-2">
-              1. Whitelist Tokens
+              Whitelist Tokens
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -396,7 +396,7 @@ function AdminPanel({ onClose, onRefresh }: { onClose: () => void; onRefresh: ()
           {/* 2. YIELD SECTION (FIXED LOGIC) */}
           <div className="border border-green-500/20 p-4 rounded-lg space-y-3">
             <p className="text-sm font-bold text-white mb-1">
-              2. Inject Yield (Profit Fisik)
+              Inject Yield
             </p>
             <input
               type="number"
@@ -415,7 +415,7 @@ function AdminPanel({ onClose, onRefresh }: { onClose: () => void; onRefresh: ()
                 disabled={isPending}
                 className="w-full bg-yellow-600 hover:bg-yellow-500 text-black text-xs font-bold py-2 rounded transition-all cursor-pointer"
               >
-                1. Approve Yield ({injectAmount} USDT)
+                Approve Yield ({injectAmount} USDT)
               </button>
             ) : (
               <button
@@ -423,12 +423,9 @@ function AdminPanel({ onClose, onRefresh }: { onClose: () => void; onRefresh: ()
                 disabled={isPending}
                 className="w-full bg-green-500 hover:bg-green-400 text-black text-xs font-bold py-2 rounded transition-all cursor-pointer"
               >
-                2. Inject Yield Fisik ({injectAmount} USDT)
+                Inject Yield({injectAmount} USDT)
               </button>
             )}
-            <p className="text-[10px] text-gray-500 mt-1">
-              Token fisik akan ditarik dari wallet Anda ke Treasury.
-            </p>
           </div>
         </div>
       </div>
