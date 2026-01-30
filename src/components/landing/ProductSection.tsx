@@ -1,6 +1,8 @@
 import { FaCheck } from "react-icons/fa6";
 
 export default function ProductSection() {
+  const enterpriseContactLink = "https://docs.google.com/forms/d/e/1FAIpQLSeE6SOlcyC_XfSV3zumeXynFwYU43XFwIoT5rfuHyQl6oLaBA/viewform?usp=publish-editor";
+
   return (
     <section id="product" className="py-24 px-6">
       <div className="max-w-7xl mx-auto text-center mb-16">
@@ -41,9 +43,12 @@ export default function ProductSection() {
               </li>
             ))}
           </ul>
-          <button className="w-full py-3 rounded-xl border border-white/20 hover:bg-white hover:text-black font-semibold transition-all mt-auto">
+          <a
+            href="/dashboard"
+            className="w-full py-3 rounded-xl border border-white/20 hover:bg-white hover:text-black font-semibold transition-all mt-auto text-center"
+          >
             Get Started
-          </button>
+          </a>
         </div>
 
         {/* Enterprise Mode Plan */}
@@ -63,7 +68,6 @@ export default function ProductSection() {
             <span className="text-gray-500"> + Subscription</span>
           </div>
           <ul className="space-y-4 mb-8 flex-grow">
-            {/* Header for list */}
             <li className="text-white font-semibold italic border-b border-white/10 pb-2 mb-4">
               Everything in Public Mode, plus:
             </li>
@@ -83,9 +87,14 @@ export default function ProductSection() {
               </li>
             ))}
           </ul>
-          <button className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-all shadow-lg shadow-red-900/50 mt-auto">
+          <a
+            href={enterpriseContactLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-all shadow-lg shadow-red-900/50 mt-auto text-center"
+          >
             Contact Sales
-          </button>
+          </a>
         </div>
       </div>
     </section>
