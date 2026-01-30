@@ -803,7 +803,7 @@ function DashboardForm() {
                     ) : (
                       <>
                         <FaLock />
-                        Step 1: Approve USDT ({rows.filter((r) => r.tokenType === "USDT").length} transfers)
+                        Approve USDT ({rows.filter((r) => r.tokenType === "USDT").length} transfers)
                       </>
                     )}
                   </button>
@@ -821,7 +821,7 @@ function DashboardForm() {
                     ) : (
                       <>
                         <FaLock />
-                        Step 1: Approve DAI ({rows.filter((r) => r.tokenType === "DAI").length} transfers)
+                        Approve DAI ({rows.filter((r) => r.tokenType === "DAI").length} transfers)
                       </>
                     )}
                   </button>
